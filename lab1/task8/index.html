@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лабораторная работа по компьютерной графике</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .navigation {
+      background: #2d3748;
+      padding: 15px 30px;
+      border-bottom: 3px solid #1a202c;
+    }
+
+    .nav-btn {
+      min-width: 80px;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+    }
+
+    .lab-info {
+      background: #f7fafc;
+      padding: 20px 30px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .canvas-wrapper {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #canvas {
+      background: white;
+      border: 1px solid #a0aec0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls-panel {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 25px;
+      overflow-y: auto;
+      max-height: 700px;
+    }
+
+    .controls-panel h3 {
+      color: #2d3748;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #cbd5e0;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Заголовок курса -->
+    <div class="header">
+      <h1 class="mb-2">Лабораторная работа 1</h1>
+      <h2 class="h4 fw-light opacity-75">Построение из произвольно расположенной точки на оси Z одноточечной
+        перспективной проекции заданного кубоида, ребра которого параллельны оси Z. Необходимо предусмотреть возможность
+        редактирования положения точки проецирования и длину ребер кубоида.
+      </h2>
+    </div>
+
+    <!-- Рабочая область -->
+    <div class="row g-3 p-4">
+      <!-- Область Canvas -->
+      <div class="col-lg-8">
+        <div class="canvas-wrapper">
+          <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+
+      <!-- Панель управления -->
+      <div class="col-lg-4">
+        <div class="controls-panel">
+          <h3 class="h5 mb-3">Контроллеры</h3>
+
+          <div id="controls">
+           <div class="mb-3">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="pp_showAxes" checked>
+      <label class="form-check-label" for="pp_showAxes">Показать оси (на плоскости z=0)</label>
+    </div>
+
+    <div class="form-check mt-2">
+      <input class="form-check-input" type="checkbox" id="pp_showCuboid" checked>
+      <label class="form-check-label" for="pp_showCuboid">Показать кубоид</label>
+    </div>
+
+    <div class="form-check mt-2">
+      <input class="form-check-input" type="checkbox" id="pp_showProjector" checked>
+      <label class="form-check-label" for="pp_showProjector">Показать точку проецирования</label>
+    </div>
+
+    <div class="form-check mt-2">
+      <input class="form-check-input" type="checkbox" id="pp_lockEyeXY" checked>
+      <label class="form-check-label" for="pp_lockEyeXY">Фиксировать E.x=E.y=0 (точка строго на оси Z)</label>
+    </div>
+
+    <hr class="my-3">
+
+    <div class="fw-semibold mb-2">Точка проецирования E</div>
+
+    <div class="mt-2">
+      <label class="form-label" for="pp_eyeZ">E.z: <span id="pp_eyeZLabel">400</span></label>
+      <input class="form-range" type="range" id="pp_eyeZ" min="50" max="2000" step="10" value="400">
+      <div class="small text-secondary">
+        Плоскость изображения: z = 0. [web:350]
+      </div>
+    </div>
+
+    <hr class="my-3">
+
+    <div class="fw-semibold mb-2">Параметры кубоида</div>
+
+    <div class="mt-2">
+      <label class="form-label" for="pp_w">Ширина по X: <span id="pp_wLabel">200</span></label>
+      <input class="form-range" type="range" id="pp_w" min="40" max="500" step="10" value="200">
+    </div>
+
+    <div class="mt-2">
+      <label class="form-label" for="pp_h">Высота по Y: <span id="pp_hLabel">140</span></label>
+      <input class="form-range" type="range" id="pp_h" min="40" max="500" step="10" value="140">
+    </div>
+
+    <div class="mt-2">
+      <label class="form-label" for="pp_dz">Длина по Z: <span id="pp_dzLabel">240</span></label>
+      <input class="form-range" type="range" id="pp_dz" min="40" max="800" step="10" value="240">
+    </div>
+
+    <div class="mt-2">
+      <label class="form-label" for="pp_z0">Смещение кубоида по Z (z0): <span id="pp_z0Label">80</span></label>
+      <input class="form-range" type="range" id="pp_z0" min="-200" max="400" step="10" value="80">
+    </div>
+
+    <hr class="my-3">
+    <div class="small text-secondary">
+      Если снять “Фиксировать E.x=E.y=0”, красную точку можно перетаскивать (меняются E.x/E.y), E.z меняется слайдером.
+    </div>
+  </div>
+
+  <div class="d-grid gap-2">
+    <button class="btn btn-outline-secondary" id="pp_reset" type="button">Сброс</button>
+  </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // ---------- DOM ----------
+    function requireEl(id) {
+      const n = document.getElementById(id);
+      if (!n) throw new Error(`Не найден элемент id="${id}"`);
+      return n;
+    }
+
+    const canvas = requireEl("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("canvas.getContext('2d') вернул null.");
+
+    const showAxesEl = requireEl("pp_showAxes");
+    const showCuboidEl = requireEl("pp_showCuboid");
+    const showProjectorEl = requireEl("pp_showProjector");
+    const lockEyeXYEl = requireEl("pp_lockEyeXY");
+
+    const eyeZEl = requireEl("pp_eyeZ");
+    const eyeZLabel = requireEl("pp_eyeZLabel");
+
+    const wEl = requireEl("pp_w");
+    const hEl = requireEl("pp_h");
+    const dzEl = requireEl("pp_dz");
+    const z0El = requireEl("pp_z0");
+
+    const wLabel = requireEl("pp_wLabel");
+    const hLabel = requireEl("pp_hLabel");
+    const dzLabel = requireEl("pp_dzLabel");
+    const z0Label = requireEl("pp_z0Label");
+
+    const resetBtn = requireEl("pp_reset");
+
+    // ---------- State ----------
+    // Плоскость изображения: z=0
+    const imgPlaneZ = 0;
+
+    // Точка проецирования E; по условию она на оси Z (x=y=0), это можно зафиксировать чекбоксом
+    let eye = { x: 0, y: 0, z: 400 };
+
+    // Кубоид: рёбра || Z => две грани на z=z0 и z=z0+dz
+    let cuboid = {
+      cx: 0, cy: 0,
+      z0: 80,
+      w: 200, h: 140, dz: 240
+    };
+
+    // near-plane для клиппинга (чтобы не исчезали ребра около/за точкой E)
+    const CLIP_EPS = 5;
+
+    // ---------- Helpers ----------
+    function clearCanvas() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // (0,0) в центре, Y вверх
+    function worldToScreenXY(x, y) {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      return { x: cx + x, y: cy - y };
+    }
+
+    function screenToWorldXY(clientX, clientY) {
+      const r = canvas.getBoundingClientRect();
+      const px = (clientX - r.left) * (canvas.width / r.width);
+      const py = (clientY - r.top)  * (canvas.height / r.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      return { x: px - cx, y: cy - py };
+    }
+
+    function dist2xy(ax, ay, bx, by) {
+      const dx = ax - bx, dy = ay - by;
+      return dx*dx + dy*dy;
+    }
+
+    // ---------- Perspective projection from E to plane z=imgPlaneZ ----------
+    // Line: L(t)=E + t(P-E). Find t where z=imgPlaneZ. [web:350]
+    function projectPoint(P) {
+      const Ez = eye.z;
+      const denom = (P.z - Ez);
+      if (Math.abs(denom) < 1e-9) return { ok: false, x: 0, y: 0 };
+
+      const t = (imgPlaneZ - Ez) / denom;
+
+      // Можно рисовать и при t<=0, но тогда это "за глазом" и обычно не нужно
+      if (t <= 0) return { ok: false, x: 0, y: 0 };
+
+      const X = eye.x + t * (P.x - eye.x);
+      const Y = eye.y + t * (P.y - eye.y);
+      const s = worldToScreenXY(X, Y);
+      return { ok: true, x: s.x, y: s.y };
+    }
+
+    // ---------- Cuboid geometry ----------
+    function buildCuboidVerticesEdges() {
+      const { cx, cy, z0, w, h, dz } = cuboid;
+      const hx = w / 2, hy = h / 2;
+      const zNear = z0;
+      const zFar  = z0 + dz;
+
+      const v = [
+        { x: cx - hx, y: cy - hy, z: zNear }, // 0
+        { x: cx + hx, y: cy - hy, z: zNear }, // 1
+        { x: cx + hx, y: cy + hy, z: zNear }, // 2
+        { x: cx - hx, y: cy + hy, z: zNear }, // 3
+        { x: cx - hx, y: cy - hy, z: zFar  }, // 4
+        { x: cx + hx, y: cy - hy, z: zFar  }, // 5
+        { x: cx + hx, y: cy + hy, z: zFar  }, // 6
+        { x: cx - hx, y: cy + hy, z: zFar  }  // 7
+      ];
+
+      const e = [
+        [0,1],[1,2],[2,3],[3,0],
+        [4,5],[5,6],[6,7],[7,4],
+        [0,4],[1,5],[2,6],[3,7]
+      ];
+
+      return { vertices: v, edges: e };
+    }
+
+    // ---------- Clipping edge against z = zClip (in 3D) ----------
+    function intersectAtZ(p, q, zClip) {
+      const dz = q.z - p.z;
+      if (Math.abs(dz) < 1e-9) return null;
+      const u = (zClip - p.z) / dz;
+      return {
+        x: p.x + u * (q.x - p.x),
+        y: p.y + u * (q.y - p.y),
+        z: zClip
+      };
+    }
+
+    function drawWireframeProjectedClipped(vertices, edges, style) {
+      const zClip = eye.z - CLIP_EPS;
+
+      ctx.save();
+      ctx.strokeStyle = style;
+      ctx.lineWidth = 2;
+
+      for (const [i, j] of edges) {
+        let a3 = vertices[i];
+        let b3 = vertices[j];
+
+        // Нормальная ситуация для перспективы: все точки должны быть "перед" глазом (z < eye.z).
+        // Если нет — клиппим по плоскости z = eye.z - eps, чтобы линии не исчезали полностью. [web:257]
+        const aOk = a3.z < zClip;
+        const bOk = b3.z < zClip;
+
+        if (!aOk && !bOk) continue;
+
+        if (aOk && !bOk) {
+          const x = intersectAtZ(a3, b3, zClip);
+          if (!x) continue;
+          b3 = x;
+        } else if (!aOk && bOk) {
+          const x = intersectAtZ(b3, a3, zClip);
+          if (!x) continue;
+          a3 = x;
+        }
+
+        const A = projectPoint(a3);
+        const B = projectPoint(b3);
+        if (!A.ok || !B.ok) continue;
+
+        ctx.beginPath();
+        ctx.moveTo(A.x, A.y);
+        ctx.lineTo(B.x, B.y);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // ---------- Drawing ----------
+    function drawAxes() {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      ctx.save();
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 1;
+
+      ctx.beginPath();
+      ctx.moveTo(0, cy);
+      ctx.lineTo(canvas.width, cy);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, canvas.height);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawProjector() {
+      const s = worldToScreenXY(eye.x, eye.y);
+
+      ctx.save();
+      ctx.fillStyle = "#e53e3e";
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // подпись Ez (чтобы было видно, что z меняется, даже если x=y=0)
+      ctx.fillStyle = "#2d3748";
+      ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.fillText(`E.z=${Math.round(eye.z)}`, s.x + 10, s.y - 10);
+      ctx.restore();
+    }
+
+    function updateLabels() {
+      eyeZLabel.textContent = String(eyeZEl.value);
+      wLabel.textContent = String(wEl.value);
+      hLabel.textContent = String(hEl.value);
+      dzLabel.textContent = String(dzEl.value);
+      z0Label.textContent = String(z0El.value);
+    }
+
+    function render() {
+      // apply controls
+      eye.z = Number(eyeZEl.value);
+      if (lockEyeXYEl.checked) { eye.x = 0; eye.y = 0; }
+
+      cuboid.w  = Number(wEl.value);
+      cuboid.h  = Number(hEl.value);
+      cuboid.dz = Number(dzEl.value);
+      cuboid.z0 = Number(z0El.value);
+
+      updateLabels();
+      clearCanvas();
+
+      if (showAxesEl.checked) drawAxes();
+      if (showProjectorEl.checked) drawProjector();
+
+      if (showCuboidEl.checked) {
+        const { vertices, edges } = buildCuboidVerticesEdges();
+        drawWireframeProjectedClipped(vertices, edges, "#2d3748");
+      }
+    }
+
+    // ---------- Interaction: drag (E.x, E.y) on plane z=0 ----------
+    const DragKind = { NONE: 0, EYE_XY: 1 };
+    const drag = { kind: DragKind.NONE };
+
+    function eyeHandleHit(worldXY) {
+      return dist2xy(worldXY.x, worldXY.y, eye.x, eye.y) <= 14 * 14;
+    }
+
+    canvas.addEventListener("mousedown", (evt) => {
+      if (lockEyeXYEl.checked) return;
+
+      const p = screenToWorldXY(evt.clientX, evt.clientY);
+      if (eyeHandleHit(p)) {
+        drag.kind = DragKind.EYE_XY;
+        evt.preventDefault();
+      }
+    });
+
+    canvas.addEventListener("mousemove", (evt) => {
+      if (drag.kind !== DragKind.EYE_XY) return;
+      const p = screenToWorldXY(evt.clientX, evt.clientY);
+      eye.x = p.x;
+      eye.y = p.y;
+      render();
+    });
+
+    function stopDrag() { drag.kind = DragKind.NONE; }
+    window.addEventListener("mouseup", stopDrag);
+    canvas.addEventListener("mouseleave", stopDrag);
+
+    // ---------- Controls events ----------
+    [
+      showAxesEl, showCuboidEl, showProjectorEl, lockEyeXYEl,
+      eyeZEl, wEl, hEl, dzEl, z0El
+    ].forEach((n) => {
+      n.addEventListener("input", render);
+      n.addEventListener("change", render);
+    });
+
+    resetBtn.addEventListener("click", () => {
+      eye = { x: 0, y: 0, z: 400 };
+      cuboid = { cx: 0, cy: 0, z0: 80, w: 200, h: 140, dz: 240 };
+
+      showAxesEl.checked = true;
+      showCuboidEl.checked = true;
+      showProjectorEl.checked = true;
+      lockEyeXYEl.checked = true;
+
+      eyeZEl.value = "400";
+      wEl.value = "200";
+      hEl.value = "140";
+      dzEl.value = "240";
+      z0El.value = "80";
+
+      render();
+    });
+
+    render();
+  });
+</script>
+
+</body>
+
+</html>

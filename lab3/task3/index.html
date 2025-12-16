@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лабораторная работа по компьютерной графике</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .navigation {
+      background: #2d3748;
+      padding: 15px 30px;
+      border-bottom: 3px solid #1a202c;
+    }
+
+    .nav-btn {
+      min-width: 80px;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+    }
+
+    .lab-info {
+      background: #f7fafc;
+      padding: 20px 30px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .canvas-wrapper {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #canvas {
+      background: white;
+      border: 1px solid #a0aec0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls-panel {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 25px;
+      overflow-y: auto;
+      max-height: 700px;
+    }
+
+    .controls-panel h3 {
+      color: #2d3748;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #cbd5e0;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Заголовок курса -->
+    <div class="header">
+      <h1 class="mb-2">Лабораторная работа 3</h1>
+      <h2 class="h4 fw-light opacity-75">Сформировать поверхность Безье для различного задающего многогранника.
+        Обеспечить поворот сформированной поверхности вокруг осей X и
+        Y.
+      </h2>
+    </div>
+
+    <!-- Рабочая область -->
+    <div class="row g-3 p-4">
+      <!-- Область Canvas -->
+      <div class="col-lg-8">
+        <div class="canvas-wrapper">
+          <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+
+      <!-- Панель управления -->
+      <div class="col-lg-4">
+        <div class="controls-panel">
+          <h3 class="h5 mb-3">Контроллеры</h3>
+
+          <div id="controls">
+            <div class="mb-3">
+              <div class="fw-semibold mb-2">Поверхность Безье (4×4 control net)</div>
+
+              <label class="form-label" for="bs_shape">Задающий многогранник (контрольная сетка)</label>
+              <select class="form-select" id="bs_shape">
+                <option value="plane" selected>Плоскость</option>
+                <option value="dome">Купол</option>
+                <option value="saddle">Седло</option>
+                <option value="wave">Волна</option>
+              </select>
+
+              <div class="mt-3">
+                <label class="form-label" for="bs_amp">Амплитуда Z: <span id="bs_ampLabel">120</span></label>
+                <input class="form-range" type="range" id="bs_amp" min="0" max="300" step="5" value="120">
+                <div class="small text-secondary">Меняет “высоту” контрольных точек по формуле выбранной формы.</div>
+              </div>
+
+              <hr class="my-3">
+
+              <div class="fw-semibold mb-2">Поворот</div>
+              <div class="mt-2">
+                <label class="form-label" for="bs_rx">Вокруг X (°): <span id="bs_rxLabel">25</span></label>
+                <input class="form-range" type="range" id="bs_rx" min="-90" max="90" step="1" value="25">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label" for="bs_ry">Вокруг Y (°): <span id="bs_ryLabel">35</span></label>
+                <input class="form-range" type="range" id="bs_ry" min="-180" max="180" step="1" value="35">
+              </div>
+
+              <hr class="my-3">
+
+              <div class="fw-semibold mb-2">Качество</div>
+              <div class="mt-2">
+                <label class="form-label" for="bs_nu">Сегментов по u: <span id="bs_nuLabel">28</span></label>
+                <input class="form-range" type="range" id="bs_nu" min="4" max="80" step="1" value="28">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label" for="bs_nv">Сегментов по v: <span id="bs_nvLabel">20</span></label>
+                <input class="form-range" type="range" id="bs_nv" min="4" max="80" step="1" value="20">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label" for="bs_scale">Масштаб: <span id="bs_scaleLabel">1.0</span></label>
+                <input class="form-range" type="range" id="bs_scale" min="0.2" max="3" step="0.1" value="1">
+              </div>
+
+              <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="bs_showNet" checked>
+                <label class="form-check-label" for="bs_showNet">Показать задающий многогранник (control net)</label>
+              </div>
+
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="bs_showAxes" checked>
+                <label class="form-check-label" for="bs_showAxes">Показать оси</label>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-secondary" id="bs_reset" type="button">Сброс</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // ---------- DOM ----------
+      function getEl(id) {
+        const el = document.getElementById(id);
+        if (!el) throw new Error(`Не найден элемент id="${id}"`);
+        return el;
+      }
+
+      const canvas = getEl("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("canvas.getContext('2d') вернул null.");
+
+      const shapeEl = getEl("bs_shape");
+      const ampEl = getEl("bs_amp");
+      const ampLabel = getEl("bs_ampLabel");
+
+      const rxEl = getEl("bs_rx");
+      const ryEl = getEl("bs_ry");
+      const rxLabel = getEl("bs_rxLabel");
+      const ryLabel = getEl("bs_ryLabel");
+
+      const nuEl = getEl("bs_nu");
+      const nvEl = getEl("bs_nv");
+      const nuLabel = getEl("bs_nuLabel");
+      const nvLabel = getEl("bs_nvLabel");
+
+      const scaleEl = getEl("bs_scale");
+      const scaleLabel = getEl("bs_scaleLabel");
+
+      const showNetEl = getEl("bs_showNet");
+      const showAxesEl = getEl("bs_showAxes");
+
+      const resetBtn = getEl("bs_reset");
+
+      // ---------- Math / view ----------
+      const degToRad = (d) => d * Math.PI / 180;
+
+      function rotateX(p, rad) {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return { x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c };
+      }
+      function rotateY(p, rad) {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return { x: p.x * c + p.z * s, y: p.y, z: -p.x * s + p.z * c };
+      }
+      function applyView(p, rx, ry) { return rotateY(rotateX(p, rx), ry); }
+
+      function projectOrtho(pView, scale2d) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        return { x: cx + pView.x * scale2d, y: cy - pView.y * scale2d };
+      }
+
+      // ---------- Bézier surface ----------
+      // Bernstein polynomials for n=3: B0=(1-t)^3, B1=3(1-t)^2 t, B2=3(1-t) t^2, B3=t^3. [web:489]
+      function bern3(i, t) {
+        const s = 1 - t;
+        if (i === 0) return s * s * s;
+        if (i === 1) return 3 * s * s * t;
+        if (i === 2) return 3 * s * t * t;
+        return t * t * t;
+      }
+
+      // S(u,v)=Σ_i Σ_j B_i^3(u) B_j^3(v) P_ij (bicubic patch). [web:489][web:472]
+      function evalBezierSurface(P, u, v) {
+        let x = 0, y = 0, z = 0;
+        for (let i = 0; i < 4; i++) {
+          const bu = bern3(i, u);
+          for (let j = 0; j < 4; j++) {
+            const bv = bern3(j, v);
+            const w = bu * bv;
+            const pij = P[i][j];
+            x += w * pij.x;
+            y += w * pij.y;
+            z += w * pij.z;
+          }
+        }
+        return { x, y, z };
+      }
+
+      // ---------- Control net generator (“многогранник”) ----------
+      // Генерируем 4x4 сетку в плоскости XY (равномерно), а Z задаём функцией формы.
+      function buildControlNet(shape, amp) {
+        const grid = [];
+        const size = 220; // общий размер по XY
+
+        for (let i = 0; i < 4; i++) {
+          grid[i] = [];
+          const u = i / 3;               // 0..1
+          const x = (u - 0.5) * size * 2;
+          for (let j = 0; j < 4; j++) {
+            const v = j / 3;
+            const y = (v - 0.5) * size * 2;
+
+            // нормированные координаты [-1..1]
+            const nx = (u - 0.5) * 2;
+            const ny = (v - 0.5) * 2;
+
+            let z = 0;
+            if (shape === "plane") {
+              z = 0;
+            } else if (shape === "dome") {
+              // купол: z = amp*(1 - (nx^2+ny^2)) с отсечкой снизу
+              const r2 = nx * nx + ny * ny;
+              z = amp * Math.max(0, 1 - r2);
+            } else if (shape === "saddle") {
+              // седло: z = amp*(nx^2 - ny^2)
+              z = amp * (nx * nx - ny * ny) * 0.6;
+            } else if (shape === "wave") {
+              // волна: z = amp*sin(pi*nx)*sin(pi*ny)
+              z = amp * Math.sin(Math.PI * nx) * Math.sin(Math.PI * ny);
+            }
+
+            grid[i][j] = { x, y, z };
+          }
+        }
+        return grid;
+      }
+
+      // ---------- Drawing ----------
+      function clearCanvas() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function drawAxes(rx, ry, scale2d) {
+        const L = 180;
+        const O = { x: 0, y: 0, z: 0 }, X = { x: L, y: 0, z: 0 }, Y = { x: 0, y: L, z: 0 }, Z = { x: 0, y: 0, z: L };
+        const axes = [
+          { a: O, b: X, c: "#e53e3e" },
+          { a: O, b: Y, c: "#48bb78" },
+          { a: O, b: Z, c: "#667eea" }
+        ];
+        for (const ax of axes) {
+          const A = projectOrtho(applyView(ax.a, rx, ry), scale2d);
+          const B = projectOrtho(applyView(ax.b, rx, ry), scale2d);
+          ctx.save();
+          ctx.strokeStyle = ax.c;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(A.x, A.y);
+          ctx.lineTo(B.x, B.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function drawControlNet(P, rx, ry, scale2d) {
+        // Рисуем “многогранник” как ребра сетки 4x4
+        ctx.save();
+        ctx.strokeStyle = "rgba(17,24,39,0.35)";
+        ctx.lineWidth = 1.5;
+
+        // линии по i
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          for (let j = 0; j < 4; j++) {
+            const s = projectOrtho(applyView(P[i][j], rx, ry), scale2d);
+            if (j === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+          }
+          ctx.stroke();
+        }
+
+        // линии по j
+        for (let j = 0; j < 4; j++) {
+          ctx.beginPath();
+          for (let i = 0; i < 4; i++) {
+            const s = projectOrtho(applyView(P[i][j], rx, ry), scale2d);
+            if (i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+          }
+          ctx.stroke();
+        }
+
+        // точки
+        ctx.fillStyle = "rgba(17,24,39,0.75)";
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 4; j++) {
+            const s = projectOrtho(applyView(P[i][j], rx, ry), scale2d);
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        ctx.restore();
+      }
+
+      function drawSurfaceWireframe(P, rx, ry, scale2d, nu, nv) {
+        ctx.save();
+        ctx.strokeStyle = "#2d3748";
+        ctx.lineWidth = 1.3;
+
+        // u = const
+        for (let iu = 0; iu <= nu; iu++) {
+          const u = iu / nu;
+          ctx.beginPath();
+          for (let iv = 0; iv <= nv; iv++) {
+            const v = iv / nv;
+            const p = evalBezierSurface(P, u, v);
+            const s = projectOrtho(applyView(p, rx, ry), scale2d);
+            if (iv === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+          }
+          ctx.stroke();
+        }
+
+        // v = const
+        for (let iv = 0; iv <= nv; iv++) {
+          const v = iv / nv;
+          ctx.beginPath();
+          for (let iu = 0; iu <= nu; iu++) {
+            const u = iu / nu;
+            const p = evalBezierSurface(P, u, v);
+            const s = projectOrtho(applyView(p, rx, ry), scale2d);
+            if (iu === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+          }
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function render() {
+        const amp = Number(ampEl.value);
+        const rx = degToRad(Number(rxEl.value));
+        const ry = degToRad(Number(ryEl.value));
+        const nu = Math.max(4, Number(nuEl.value));
+        const nv = Math.max(4, Number(nvEl.value));
+        const scale2d = Number(scaleEl.value);
+
+        ampLabel.textContent = String(ampEl.value);
+        rxLabel.textContent = String(rxEl.value);
+        ryLabel.textContent = String(ryEl.value);
+        nuLabel.textContent = String(nuEl.value);
+        nvLabel.textContent = String(nvEl.value);
+        scaleLabel.textContent = String(scaleEl.value);
+
+        const P = buildControlNet(shapeEl.value, amp);
+
+        clearCanvas();
+        if (showAxesEl.checked) drawAxes(rx, ry, scale2d);
+        drawSurfaceWireframe(P, rx, ry, scale2d, nu, nv);
+        if (showNetEl.checked) drawControlNet(P, rx, ry, scale2d);
+      }
+
+      // ---------- Events ----------
+      [
+        shapeEl, ampEl,
+        rxEl, ryEl,
+        nuEl, nvEl,
+        scaleEl,
+        showNetEl, showAxesEl
+      ].forEach(el => {
+        el.addEventListener("input", render);
+        el.addEventListener("change", render);
+      });
+
+      resetBtn.addEventListener("click", () => {
+        shapeEl.value = "plane";
+        ampEl.value = "120";
+        rxEl.value = "25";
+        ryEl.value = "35";
+        nuEl.value = "28";
+        nvEl.value = "20";
+        scaleEl.value = "1";
+        showNetEl.checked = true;
+        showAxesEl.checked = true;
+        render();
+      });
+
+      render();
+    });
+  </script>
+</body>
+
+</html>

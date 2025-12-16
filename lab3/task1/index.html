@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа по компьютерной графике</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .navigation {
+            background: #2d3748;
+            padding: 15px 30px;
+            border-bottom: 3px solid #1a202c;
+        }
+
+        .nav-btn {
+            min-width: 80px;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #fff;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+        }
+
+        .lab-info {
+            background: #f7fafc;
+            padding: 20px 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .canvas-wrapper {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            background: white;
+            border: 1px solid #a0aec0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls-panel {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 25px;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .controls-panel h3 {
+            color: #2d3748;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #cbd5e0;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Заголовок курса -->
+        <div class="header">
+            <h1 class="mb-2">Лабораторная работа 3</h1>
+            <h2 class="h4 fw-light opacity-75">Сформировать билинейную поверхность на основе произвольного задания ее
+                четерех угловых точек. Обеспечить ее поворот относительно осей X
+                и Y.</h2>
+        </div>
+
+        <!-- Рабочая область -->
+        <div class="row g-3 p-4">
+            <!-- Область Canvas -->
+            <div class="col-lg-8">
+                <div class="canvas-wrapper">
+                    <canvas id="canvas" width="800" height="600"></canvas>
+                </div>
+            </div>
+
+            <!-- Панель управления -->
+            <div class="col-lg-4">
+                <div class="controls-panel">
+                    <h3 class="h5 mb-3">Контроллеры</h3>
+
+                    <div id="controls">
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Угловые точки (3D)</div>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Точка</th>
+                                            <th>X</th>
+                                            <th>Y</th>
+                                            <th>Z</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>P00</td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p00x" value="-120"></td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p00y" value="-80"></td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p00z" value="0"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>P10</td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p10x" value="120"></td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p10y" value="-80"></td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p10z" value="40"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>P01</td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p01x" value="-120"></td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p01y" value="80"></td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p01z" value="60"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>P11</td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p11x" value="120"></td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p11y" value="80"></td>
+                                            <td><input class="form-control form-control-sm" type="number" step="1"
+                                                    id="bl_p11z" value="0"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-2">
+                                <button class="btn btn-outline-secondary" id="bl_pointsDemo" type="button">Пример
+                                    точек</button>
+                            </div>
+
+                            <hr class="my-3">
+
+                            <div class="fw-semibold mb-2">Поворот</div>
+
+                            <div class="mt-2">
+                                <label class="form-label" for="bl_rx">Вокруг X (°): <span
+                                        id="bl_rxLabel">25</span></label>
+                                <input class="form-range" type="range" id="bl_rx" min="-90" max="90" step="1"
+                                    value="25">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label" for="bl_ry">Вокруг Y (°): <span
+                                        id="bl_ryLabel">35</span></label>
+                                <input class="form-range" type="range" id="bl_ry" min="-180" max="180" step="1"
+                                    value="35">
+                            </div>
+
+                            <hr class="my-3">
+
+                            <div class="mt-2">
+                                <label class="form-label" for="bl_steps">Шагов сетки (n): <span
+                                        id="bl_stepsLabel">14</span></label>
+                                <input class="form-range" type="range" id="bl_steps" min="2" max="40" step="1"
+                                    value="14">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label" for="bl_scale">Масштаб: <span
+                                        id="bl_scaleLabel">1.0</span></label>
+                                <input class="form-range" type="range" id="bl_scale" min="0.2" max="3" step="0.1"
+                                    value="1">
+                            </div>
+
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" id="bl_showAxes" checked>
+                                <label class="form-check-label" for="bl_showAxes">Показать оси</label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-secondary" id="bl_reset" type="button">Сброс</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // ---------- DOM ----------
+            function requireEl(id) {
+                const n = document.getElementById(id);
+                if (!n) throw new Error(`Не найден элемент id="${id}". Проверьте HTML.`);
+                return n;
+            }
+
+            const canvas = requireEl("canvas");
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("canvas.getContext('2d') вернул null.");
+
+            // точки
+            const p00xEl = requireEl("bl_p00x"); const p00yEl = requireEl("bl_p00y"); const p00zEl = requireEl("bl_p00z");
+            const p10xEl = requireEl("bl_p10x"); const p10yEl = requireEl("bl_p10y"); const p10zEl = requireEl("bl_p10z");
+            const p01xEl = requireEl("bl_p01x"); const p01yEl = requireEl("bl_p01y"); const p01zEl = requireEl("bl_p01z");
+            const p11xEl = requireEl("bl_p11x"); const p11yEl = requireEl("bl_p11y"); const p11zEl = requireEl("bl_p11z");
+            const pointsDemoBtn = requireEl("bl_pointsDemo");
+
+            // поворот/сетка/масштаб
+            const rxEl = requireEl("bl_rx");
+            const ryEl = requireEl("bl_ry");
+            const rxLabel = requireEl("bl_rxLabel");
+            const ryLabel = requireEl("bl_ryLabel");
+
+            const stepsEl = requireEl("bl_steps");
+            const stepsLabel = requireEl("bl_stepsLabel");
+
+            const scaleEl = requireEl("bl_scale");
+            const scaleLabel = requireEl("bl_scaleLabel");
+
+            const showAxesEl = requireEl("bl_showAxes");
+            const resetBtn = requireEl("bl_reset");
+
+            // ---------- Math ----------
+            const degToRad = (d) => d * Math.PI / 180;
+
+            // Повороты вокруг X/Y (матрицы вращения) [web:422]
+            function rotateX(p, rad) {
+                const c = Math.cos(rad), s = Math.sin(rad);
+                return { x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c };
+            }
+            function rotateY(p, rad) {
+                const c = Math.cos(rad), s = Math.sin(rad);
+                return { x: p.x * c + p.z * s, y: p.y, z: -p.x * s + p.z * c };
+            }
+            function applyView(p, rx, ry) {
+                return rotateY(rotateX(p, rx), ry);
+            }
+
+            // Ортографическая проекция: берём x,y после поворота (параллельная проекция). [web:421]
+            function projectOrtho(pView, scale2d) {
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                return { x: cx + pView.x * scale2d, y: cy - pView.y * scale2d };
+            }
+
+            // Билинейная поверхность по 4 точкам (bilinear patch). [web:417][web:419]
+            function bilinearPoint(P00, P10, P01, P11, u, v) {
+                const w00 = (1 - u) * (1 - v);
+                const w10 = u * (1 - v);
+                const w01 = (1 - u) * v;
+                const w11 = u * v;
+                return {
+                    x: w00 * P00.x + w10 * P10.x + w01 * P01.x + w11 * P11.x,
+                    y: w00 * P00.y + w10 * P10.y + w01 * P01.y + w11 * P11.y,
+                    z: w00 * P00.z + w10 * P10.z + w01 * P01.z + w11 * P11.z
+                };
+            }
+
+            function readPoint(xEl, yEl, zEl) {
+                const x = Number(xEl.value);
+                const y = Number(yEl.value);
+                const z = Number(zEl.value);
+                if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return null;
+                return { x, y, z };
+            }
+
+            // ---------- Drawing ----------
+            function clearCanvas() {
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            function drawAxes(rx, ry, scale2d) {
+                const L = 160;
+                const O = { x: 0, y: 0, z: 0 };
+                const X = { x: L, y: 0, z: 0 };
+                const Y = { x: 0, y: L, z: 0 };
+                const Z = { x: 0, y: 0, z: L };
+
+                const axes = [
+                    { a: O, b: X, c: "#e53e3e" },
+                    { a: O, b: Y, c: "#48bb78" },
+                    { a: O, b: Z, c: "#667eea" }
+                ];
+
+                for (const ax of axes) {
+                    const A = projectOrtho(applyView(ax.a, rx, ry), scale2d);
+                    const B = projectOrtho(applyView(ax.b, rx, ry), scale2d);
+
+                    ctx.save();
+                    ctx.strokeStyle = ax.c;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(A.x, A.y);
+                    ctx.lineTo(B.x, B.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            function drawGridLines(P00, P10, P01, P11, rx, ry, scale2d, steps) {
+                ctx.save();
+                ctx.strokeStyle = "#2d3748";
+                ctx.lineWidth = 1.5;
+
+                // u = const
+                for (let i = 0; i <= steps; i++) {
+                    const u = i / steps;
+                    let first = true;
+                    ctx.beginPath();
+
+                    for (let j = 0; j <= steps; j++) {
+                        const v = j / steps;
+                        const p = bilinearPoint(P00, P10, P01, P11, u, v);
+                        const s = projectOrtho(applyView(p, rx, ry), scale2d);
+                        if (first) { ctx.moveTo(s.x, s.y); first = false; }
+                        else ctx.lineTo(s.x, s.y);
+                    }
+                    ctx.stroke();
+                }
+
+                // v = const
+                for (let j = 0; j <= steps; j++) {
+                    const v = j / steps;
+                    let first = true;
+                    ctx.beginPath();
+
+                    for (let i = 0; i <= steps; i++) {
+                        const u = i / steps;
+                        const p = bilinearPoint(P00, P10, P01, P11, u, v);
+                        const s = projectOrtho(applyView(p, rx, ry), scale2d);
+                        if (first) { ctx.moveTo(s.x, s.y); first = false; }
+                        else ctx.lineTo(s.x, s.y);
+                    }
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+
+            function drawCornerPoints(P00, P10, P01, P11, rx, ry, scale2d) {
+                const pts = [P00, P10, P01, P11];
+                for (const p of pts) {
+                    const s = projectOrtho(applyView(p, rx, ry), scale2d);
+                    ctx.save();
+                    ctx.fillStyle = "#111827";
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, 4.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            function drawError(text) {
+                ctx.save();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.fillStyle = "#b91c1c";
+                ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+                ctx.fillText(text, 12, 20);
+                ctx.restore();
+            }
+
+            // ---------- Render ----------
+            function render() {
+                const P00 = readPoint(p00xEl, p00yEl, p00zEl);
+                const P10 = readPoint(p10xEl, p10yEl, p10zEl);
+                const P01 = readPoint(p01xEl, p01yEl, p01zEl);
+                const P11 = readPoint(p11xEl, p11yEl, p11zEl);
+
+                const rx = degToRad(Number(rxEl.value));
+                const ry = degToRad(Number(ryEl.value));
+                const steps = Math.max(2, Number(stepsEl.value));
+                const scale2d = Number(scaleEl.value);
+
+                rxLabel.textContent = String(rxEl.value);
+                ryLabel.textContent = String(ryEl.value);
+                stepsLabel.textContent = String(stepsEl.value);
+                scaleLabel.textContent = String(scaleEl.value);
+
+                clearCanvas();
+
+                if (!P00 || !P10 || !P01 || !P11) {
+                    drawError("Ошибка: значения точек должны быть числами.");
+                    return;
+                }
+
+                if (showAxesEl.checked) drawAxes(rx, ry, scale2d);
+
+                drawGridLines(P00, P10, P01, P11, rx, ry, scale2d, steps);
+                drawCornerPoints(P00, P10, P01, P11, rx, ry, scale2d);
+            }
+
+            // ---------- Events ----------
+            const pointInputs = [
+                p00xEl, p00yEl, p00zEl,
+                p10xEl, p10yEl, p10zEl,
+                p01xEl, p01yEl, p01zEl,
+                p11xEl, p11yEl, p11zEl
+            ];
+
+            pointInputs.forEach(el => {
+                el.addEventListener("input", render);
+                el.addEventListener("change", render);
+            });
+
+            [rxEl, ryEl, stepsEl, scaleEl, showAxesEl].forEach(el => {
+                el.addEventListener("input", render);
+                el.addEventListener("change", render);
+            });
+
+            pointsDemoBtn.addEventListener("click", () => {
+                p00xEl.value = -120; p00yEl.value = -80; p00zEl.value = 0;
+                p10xEl.value = 120; p10yEl.value = -80; p10zEl.value = 40;
+                p01xEl.value = -120; p01yEl.value = 80; p01zEl.value = 60;
+                p11xEl.value = 120; p11yEl.value = 80; p11zEl.value = 0;
+                render();
+            });
+
+            resetBtn.addEventListener("click", () => {
+                p00xEl.value = -120; p00yEl.value = -80; p00zEl.value = 0;
+                p10xEl.value = 120; p10yEl.value = -80; p10zEl.value = 40;
+                p01xEl.value = -120; p01yEl.value = 80; p01zEl.value = 60;
+                p11xEl.value = 120; p11yEl.value = 80; p11zEl.value = 0;
+
+                rxEl.value = "25";
+                ryEl.value = "35";
+                stepsEl.value = "14";
+                scaleEl.value = "1";
+                showAxesEl.checked = true;
+
+                render();
+            });
+
+            render();
+        });
+    </script>
+
+</body>
+
+</html>

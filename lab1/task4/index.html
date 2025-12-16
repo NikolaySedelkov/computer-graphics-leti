@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лабораторная работа по компьютерной графике</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .navigation {
+      background: #2d3748;
+      padding: 15px 30px;
+      border-bottom: 3px solid #1a202c;
+    }
+
+    .nav-btn {
+      min-width: 80px;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+    }
+
+    .lab-info {
+      background: #f7fafc;
+      padding: 20px 30px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .canvas-wrapper {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #canvas {
+      background: white;
+      border: 1px solid #a0aec0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls-panel {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 25px;
+      overflow-y: auto;
+      max-height: 700px;
+    }
+
+    .controls-panel h3 {
+      color: #2d3748;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #cbd5e0;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Заголовок курса -->
+    <div class="header">
+      <h1 class="mb-2">Лабораторная работа 1</h1>
+      <h2 class="h4 fw-light opacity-75">Отображение объемного тела относительно плоскостей координат.
+      </h2>
+    </div>
+
+    <!-- Рабочая область -->
+    <div class="row g-3 p-4">
+      <!-- Область Canvas -->
+      <div class="col-lg-8">
+        <div class="canvas-wrapper">
+          <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+
+      <!-- Панель управления -->
+      <div class="col-lg-4">
+        <div class="controls-panel">
+          <h3 class="h5 mb-3">Контроллеры</h3>
+
+          <div id="controls">
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="showOriginal3D" checked>
+                <label class="form-check-label" for="showOriginal3D">Показать исходное тело</label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="showRefXY" checked>
+                <label class="form-check-label" for="showRefXY">Отражение относительно плоскости XY (z → −z)</label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="showRefXZ" checked>
+                <label class="form-check-label" for="showRefXZ">Отражение относительно плоскости XZ (y → −y)</label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="showRefYZ" checked>
+                <label class="form-check-label" for="showRefYZ">Отражение относительно плоскости YZ (x → −x)</label>
+              </div>
+
+              <hr class="my-3">
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="showPlanes" checked>
+                <label class="form-check-label" for="showPlanes">Показать координатные плоскости</label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="usePerspective" checked>
+                <label class="form-check-label" for="usePerspective">Перспективная проекция</label>
+              </div>
+
+              <div class="mt-3">
+                <label class="form-label" for="rotX">Поворот вида вокруг X (°): <span id="rotXLabel">-20</span></label>
+                <input class="form-range" type="range" id="rotX" min="-180" max="180" step="1" value="-20">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label" for="rotY">Поворот вида вокруг Y (°): <span id="rotYLabel">35</span></label>
+                <input class="form-range" type="range" id="rotY" min="-180" max="180" step="1" value="35">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label" for="camDist">Дистанция камеры: <span id="camDistLabel">500</span></label>
+                <input class="form-range" type="range" id="camDist" min="200" max="1200" step="10" value="500">
+              </div>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-secondary" id="resetBtn3D" type="button">Сброс</button>
+            </div>
+
+            <hr class="my-3">
+            <div class="small text-secondary">
+              Подсказка: вращайте вид, чтобы плоскости и отражения не “сливались” в одну проекцию.
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // ---------- Required DOM ----------
+      function requireEl(id) {
+        const node = document.getElementById(id);
+        if (!node) throw new Error(`Не найден элемент с id="${id}". Проверьте HTML.`);
+        return node;
+      }
+
+      const canvas = requireEl("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("canvas.getContext('2d') вернул null.");
+
+      const showOriginalEl = requireEl("showOriginal3D");
+      const showRefXYEl = requireEl("showRefXY");
+      const showRefXZEl = requireEl("showRefXZ");
+      const showRefYZEl = requireEl("showRefYZ");
+      const showPlanesEl = requireEl("showPlanes");
+      const usePerspectiveEl = requireEl("usePerspective");
+
+      const rotXEl = requireEl("rotX");
+      const rotYEl = requireEl("rotY");
+      const camDistEl = requireEl("camDist");
+
+      const rotXLabelEl = requireEl("rotXLabel");
+      const rotYLabelEl = requireEl("rotYLabel");
+      const camDistLabelEl = requireEl("camDistLabel");
+
+      const resetBtn = requireEl("resetBtn3D");
+
+      // ---------- 2D helper drawing ----------
+      function clearCanvas() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function drawAxes2D() {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        ctx.moveTo(0, cy);
+        ctx.lineTo(canvas.width, cy);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx, canvas.height);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      // ---------- Math helpers ----------
+      const degToRad = (deg) => (deg * Math.PI) / 180;
+
+      function rotateX(p, rad) {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return { x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c };
+      }
+
+      function rotateY(p, rad) {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return { x: p.x * c + p.z * s, y: p.y, z: -p.x * s + p.z * c };
+      }
+
+      // Простая перспектива: X = x * k/(z+cam), Y = y * k/(z+cam) [web:181]
+      function project(p, camDist, usePerspective) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        if (!usePerspective) {
+          return { x: cx + p.x, y: cy - p.y, ok: true };
+        }
+
+        const z = p.z + camDist;
+        if (z <= 1) return { x: 0, y: 0, ok: false };
+
+        const k = 700; // "фокус"/масштаб перспективы
+        const sx = (p.x * k) / z;
+        const sy = (p.y * k) / z;
+        return { x: cx + sx, y: cy - sy, ok: true };
+      }
+
+      // ---------- 3D body (wireframe cube) ----------
+      // Куб в первом октанте, чтобы отражения были наглядны
+      function makeCube(minX, minY, minZ, maxX, maxY, maxZ) {
+        const v = [
+          { x: minX, y: minY, z: minZ }, // 0
+          { x: maxX, y: minY, z: minZ }, // 1
+          { x: maxX, y: maxY, z: minZ }, // 2
+          { x: minX, y: maxY, z: minZ }, // 3
+          { x: minX, y: minY, z: maxZ }, // 4
+          { x: maxX, y: minY, z: maxZ }, // 5
+          { x: maxX, y: maxY, z: maxZ }, // 6
+          { x: minX, y: maxY, z: maxZ }  // 7
+        ];
+
+        const edges = [
+          [0, 1], [1, 2], [2, 3], [3, 0],
+          [4, 5], [5, 6], [6, 7], [7, 4],
+          [0, 4], [1, 5], [2, 6], [3, 7]
+        ];
+
+        return { vertices: v, edges };
+      }
+
+      let body = makeCube(60, 40, 40, 180, 140, 140);
+
+      // ---------- Reflections across coordinate planes ----------
+      // XY: z -> -z, XZ: y -> -y, YZ: x -> -x [web:182]
+      function reflectXY(p) { return { x: p.x, y: p.y, z: -p.z }; }
+      function reflectXZ(p) { return { x: p.x, y: -p.y, z: p.z }; }
+      function reflectYZ(p) { return { x: -p.x, y: p.y, z: p.z }; }
+
+      // ---------- Draw planes (as wireframe squares) ----------
+      function drawPlaneSquare(planeName, size, style) {
+        // planeName: "XY"(z=0), "XZ"(y=0), "YZ"(x=0)
+        const s = size;
+        let pts3 = [];
+
+        if (planeName === "XY") pts3 = [{ x: -s, y: -s, z: 0 }, { x: s, y: -s, z: 0 }, { x: s, y: s, z: 0 }, { x: -s, y: s, z: 0 }];
+        if (planeName === "XZ") pts3 = [{ x: -s, y: 0, z: -s }, { x: s, y: 0, z: -s }, { x: s, y: 0, z: s }, { x: -s, y: 0, z: s }];
+        if (planeName === "YZ") pts3 = [{ x: 0, y: -s, z: -s }, { x: 0, y: s, z: -s }, { x: 0, y: s, z: s }, { x: 0, y: -s, z: s }];
+
+        const edges = [[0, 1], [1, 2], [2, 3], [3, 0]];
+
+        ctx.save();
+        ctx.strokeStyle = style;
+        ctx.lineWidth = 1;
+
+        const viewRX = degToRad(Number(rotXEl.value));
+        const viewRY = degToRad(Number(rotYEl.value));
+        const camDist = Number(camDistEl.value);
+        const persp = usePerspectiveEl.checked;
+
+        for (const [a, b] of edges) {
+          const p0v = rotateY(rotateX(pts3[a], viewRX), viewRY);
+          const p1v = rotateY(rotateX(pts3[b], viewRX), viewRY);
+
+          const P0 = project(p0v, camDist, persp);
+          const P1 = project(p1v, camDist, persp);
+
+          if (!P0.ok || !P1.ok) continue;
+
+          ctx.beginPath();
+          ctx.moveTo(P0.x, P0.y);
+          ctx.lineTo(P1.x, P1.y);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      // ---------- Draw wireframe body ----------
+      function drawWireframe(vertices, edges, style) {
+        const viewRX = degToRad(Number(rotXEl.value));
+        const viewRY = degToRad(Number(rotYEl.value));
+        const camDist = Number(camDistEl.value);
+        const persp = usePerspectiveEl.checked;
+
+        // transform + project all vertices once
+        const projected = vertices.map((p) => {
+          const v = rotateY(rotateX(p, viewRX), viewRY);
+          return project(v, camDist, persp);
+        });
+
+        ctx.save();
+        ctx.strokeStyle = style;
+        ctx.lineWidth = 2;
+
+        for (const [i, j] of edges) {
+          const a = projected[i];
+          const b = projected[j];
+          if (!a.ok || !b.ok) continue;
+
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      // ---------- Build reflected body ----------
+      function mapVertices(vertices, fn) {
+        return vertices.map(fn);
+      }
+
+      // ---------- Render ----------
+      function render() {
+        rotXLabelEl.textContent = String(rotXEl.value);
+        rotYLabelEl.textContent = String(rotYEl.value);
+        camDistLabelEl.textContent = String(camDistEl.value);
+
+        clearCanvas();
+        drawAxes2D();
+
+        if (showPlanesEl.checked) {
+          drawPlaneSquare("XY", 220, "rgba(72, 187, 120, 0.55)");
+          drawPlaneSquare("XZ", 220, "rgba(237, 137, 54, 0.55)");
+          drawPlaneSquare("YZ", 220, "rgba(102, 126, 234, 0.55)");
+        }
+
+        if (showOriginalEl.checked) {
+          drawWireframe(body.vertices, body.edges, "#2d3748");
+        }
+
+        if (showRefXYEl.checked) {
+          drawWireframe(mapVertices(body.vertices, reflectXY), body.edges, "#48bb78");
+        }
+
+        if (showRefXZEl.checked) {
+          drawWireframe(mapVertices(body.vertices, reflectXZ), body.edges, "#ed8936");
+        }
+
+        if (showRefYZEl.checked) {
+          drawWireframe(mapVertices(body.vertices, reflectYZ), body.edges, "#667eea");
+        }
+      }
+
+      // ---------- Events ----------
+      [
+        showOriginalEl, showRefXYEl, showRefXZEl, showRefYZEl,
+        showPlanesEl, usePerspectiveEl,
+        rotXEl, rotYEl, camDistEl
+      ].forEach((node) => {
+        node.addEventListener("input", render);
+        node.addEventListener("change", render);
+      });
+
+      resetBtn.addEventListener("click", () => {
+        showOriginalEl.checked = true;
+        showRefXYEl.checked = true;
+        showRefXZEl.checked = true;
+        showRefYZEl.checked = true;
+        showPlanesEl.checked = true;
+        usePerspectiveEl.checked = true;
+
+        rotXEl.value = "-20";
+        rotYEl.value = "35";
+        camDistEl.value = "500";
+
+        body = makeCube(60, 40, 40, 180, 140, 140);
+
+        render();
+      });
+
+      // старт
+      render();
+    });
+  </script>
+
+
+
+</body>
+
+</html>

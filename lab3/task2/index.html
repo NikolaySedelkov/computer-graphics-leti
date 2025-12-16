@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа по компьютерной графике</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .navigation {
+            background: #2d3748;
+            padding: 15px 30px;
+            border-bottom: 3px solid #1a202c;
+        }
+
+        .nav-btn {
+            min-width: 80px;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #fff;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+        }
+
+        .lab-info {
+            background: #f7fafc;
+            padding: 20px 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .canvas-wrapper {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            background: white;
+            border: 1px solid #a0aec0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls-panel {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 25px;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .controls-panel h3 {
+            color: #2d3748;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #cbd5e0;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Заголовок курса -->
+        <div class="header">
+            <h1 class="mb-2">Лабораторная работа 3</h1>
+            <h2 class="h4 fw-light opacity-75">Формирование различных билинейных поверхностей на основе задания двух ее
+                граничных линий (отрезков, парабол, кубических сплайнов,
+                сплайнов Безье и их взаимного сочетания). Обеспечить поворот сформированной поверхности вокруг осей X и
+                Y. (11 различных вариантов задания поверхностей).
+
+            </h2>
+        </div>
+
+        <!-- Рабочая область -->
+        <div class="row g-3 p-4">
+            <!-- Область Canvas -->
+            <div class="col-lg-8">
+                <div class="canvas-wrapper">
+                    <canvas id="canvas" width="800" height="600"></canvas>
+                </div>
+            </div>
+
+            <!-- Панель управления -->
+            <div class="col-lg-4">
+                <div class="controls-panel">
+                    <h3 class="h5 mb-3">Контроллеры</h3>
+
+                    <div id="controls">
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Граничные линии C0(u), C1(u)</div>
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="fw-semibold">C0(u)</div>
+                                    <label class="form-label mt-2" for="rs_type0">Тип C0</label>
+                                    <select class="form-select" id="rs_type0">
+                                        <option value="segment" selected>Отрезок (2 точки)</option>
+                                        <option value="parabola">Парабола (квадратичная Безье, 3 точки)</option>
+                                        <option value="bezier">Кубическая Безье (4 точки)</option>
+                                    </select>
+
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Точка</th>
+                                                    <th>X</th>
+                                                    <th>Y</th>
+                                                    <th>Z</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>P0</td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p0x" value="-200"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p0y" value="-80"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p0z" value="-60"></td>
+                                                </tr>
+                                                <tr id="rs_c0_row_p1">
+                                                    <td>P1</td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p1x" value="-60"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p1y" value="-140"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p1z" value="60"></td>
+                                                </tr>
+                                                <tr id="rs_c0_row_p2">
+                                                    <td>P2</td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p2x" value="80"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p2y" value="-80"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p2z" value="-40"></td>
+                                                </tr>
+                                                <tr id="rs_c0_row_p3">
+                                                    <td>P3</td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p3x" value="220"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p3y" value="-120"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c0_p3z" value="40"></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="fw-semibold">C1(u)</div>
+                                    <label class="form-label mt-2" for="rs_type1">Тип C1</label>
+                                    <select class="form-select" id="rs_type1">
+                                        <option value="segment">Отрезок (2 точки)</option>
+                                        <option value="parabola" selected>Парабола (квадратичная Безье, 3 точки)
+                                        </option>
+                                        <option value="bezier">Кубическая Безье (4 точки)</option>
+                                    </select>
+
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Точка</th>
+                                                    <th>X</th>
+                                                    <th>Y</th>
+                                                    <th>Z</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Q0</td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p0x" value="-220"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p0y" value="80"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p0z" value="80"></td>
+                                                </tr>
+                                                <tr id="rs_c1_row_p1">
+                                                    <td>Q1</td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p1x" value="-40"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p1y" value="160"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p1z" value="-40"></td>
+                                                </tr>
+                                                <tr id="rs_c1_row_p2">
+                                                    <td>Q2</td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p2x" value="120"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p2y" value="80"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p2z" value="60"></td>
+                                                </tr>
+                                                <tr id="rs_c1_row_p3">
+                                                    <td>Q3</td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p3x" value="240"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p3y" value="140"></td>
+                                                    <td><input class="form-control form-control-sm" type="number"
+                                                            step="1" id="rs_c1_p3z" value="-60"></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            <div class="fw-semibold mb-2">Поворот и сетка</div>
+
+                            <div class="mt-2">
+                                <label class="form-label" for="rs_rx">Вокруг X (°): <span
+                                        id="rs_rxLabel">20</span></label>
+                                <input class="form-range" type="range" id="rs_rx" min="-90" max="90" step="1"
+                                    value="20">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label" for="rs_ry">Вокруг Y (°): <span
+                                        id="rs_ryLabel">35</span></label>
+                                <input class="form-range" type="range" id="rs_ry" min="-180" max="180" step="1"
+                                    value="35">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label" for="rs_nu">Сегментов по u: <span
+                                        id="rs_nuLabel">30</span></label>
+                                <input class="form-range" type="range" id="rs_nu" min="5" max="80" step="1" value="30">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label" for="rs_nv">Сегментов по v: <span
+                                        id="rs_nvLabel">16</span></label>
+                                <input class="form-range" type="range" id="rs_nv" min="2" max="60" step="1" value="16">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label" for="rs_scale">Масштаб: <span
+                                        id="rs_scaleLabel">1.0</span></label>
+                                <input class="form-range" type="range" id="rs_scale" min="0.2" max="3" step="0.1"
+                                    value="1">
+                            </div>
+
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" id="rs_showAxes" checked>
+                                <label class="form-check-label" for="rs_showAxes">Показать оси</label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-secondary" id="rs_reset" type="button">Сброс</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // ---------- DOM ----------
+            function requireEl(id) {
+                const n = document.getElementById(id);
+                if (!n) throw new Error(`Не найден элемент id="${id}"`);
+                return n;
+            }
+
+            const canvas = requireEl("canvas");
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("canvas.getContext('2d') вернул null.");
+
+            const type0El = requireEl("rs_type0");
+            const type1El = requireEl("rs_type1");
+
+            // C0 points P0..P3
+            const c0 = {
+                p0x: requireEl("rs_c0_p0x"), p0y: requireEl("rs_c0_p0y"), p0z: requireEl("rs_c0_p0z"),
+                p1x: requireEl("rs_c0_p1x"), p1y: requireEl("rs_c0_p1y"), p1z: requireEl("rs_c0_p1z"),
+                p2x: requireEl("rs_c0_p2x"), p2y: requireEl("rs_c0_p2y"), p2z: requireEl("rs_c0_p2z"),
+                p3x: requireEl("rs_c0_p3x"), p3y: requireEl("rs_c0_p3y"), p3z: requireEl("rs_c0_p3z"),
+                row1: requireEl("rs_c0_row_p1"),
+                row2: requireEl("rs_c0_row_p2"),
+                row3: requireEl("rs_c0_row_p3")
+            };
+
+            // C1 points Q0..Q3
+            const c1 = {
+                p0x: requireEl("rs_c1_p0x"), p0y: requireEl("rs_c1_p0y"), p0z: requireEl("rs_c1_p0z"),
+                p1x: requireEl("rs_c1_p1x"), p1y: requireEl("rs_c1_p1y"), p1z: requireEl("rs_c1_p1z"),
+                p2x: requireEl("rs_c1_p2x"), p2y: requireEl("rs_c1_p2y"), p2z: requireEl("rs_c1_p2z"),
+                p3x: requireEl("rs_c1_p3x"), p3y: requireEl("rs_c1_p3y"), p3z: requireEl("rs_c1_p3z"),
+                row1: requireEl("rs_c1_row_p1"),
+                row2: requireEl("rs_c1_row_p2"),
+                row3: requireEl("rs_c1_row_p3")
+            };
+
+            const rxEl = requireEl("rs_rx");
+            const ryEl = requireEl("rs_ry");
+            const rxLabel = requireEl("rs_rxLabel");
+            const ryLabel = requireEl("rs_ryLabel");
+
+            const nuEl = requireEl("rs_nu");
+            const nvEl = requireEl("rs_nv");
+            const nuLabel = requireEl("rs_nuLabel");
+            const nvLabel = requireEl("rs_nvLabel");
+
+            const scaleEl = requireEl("rs_scale");
+            const scaleLabel = requireEl("rs_scaleLabel");
+
+            const showAxesEl = requireEl("rs_showAxes");
+            const resetBtn = requireEl("rs_reset");
+
+            // ---------- Math ----------
+            const degToRad = (d) => d * Math.PI / 180;
+
+            function rotateX(p, rad) {
+                const c = Math.cos(rad), s = Math.sin(rad);
+                return { x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c };
+            }
+            function rotateY(p, rad) {
+                const c = Math.cos(rad), s = Math.sin(rad);
+                return { x: p.x * c + p.z * s, y: p.y, z: -p.x * s + p.z * c };
+            }
+            function applyView(p, rx, ry) {
+                return rotateY(rotateX(p, rx), ry);
+            }
+
+            function projectOrtho(pView, scale2d) {
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                return { x: cx + pView.x * scale2d, y: cy - pView.y * scale2d };
+            }
+
+            function lerp(a, b, t) { return a + (b - a) * t; }
+            function lerp3(A, B, t) { return { x: lerp(A.x, B.x, t), y: lerp(A.y, B.y, t), z: lerp(A.z, B.z, t) }; }
+
+            // кубическая Безье [web:447]
+            function bezier3(P0, P1, P2, P3, t) {
+                const s = 1 - t;
+                const b0 = s * s * s;
+                const b1 = 3 * s * s * t;
+                const b2 = 3 * s * t * t;
+                const b3 = t * t * t;
+                return {
+                    x: b0 * P0.x + b1 * P1.x + b2 * P2.x + b3 * P3.x,
+                    y: b0 * P0.y + b1 * P1.y + b2 * P2.y + b3 * P3.y,
+                    z: b0 * P0.z + b1 * P1.z + b2 * P2.z + b3 * P3.z
+                };
+            }
+
+            // квадратичная Безье (парабола)
+            function bezier2(P0, P1, P2, t) {
+                const s = 1 - t;
+                const b0 = s * s;
+                const b1 = 2 * s * t;
+                const b2 = t * t;
+                return {
+                    x: b0 * P0.x + b1 * P1.x + b2 * P2.x,
+                    y: b0 * P0.y + b1 * P1.y + b2 * P2.y,
+                    z: b0 * P0.z + b1 * P1.z + b2 * P2.z
+                };
+            }
+
+            function readPoint3(ax, ay, az) {
+                const x = Number(ax.value), y = Number(ay.value), z = Number(az.value);
+                if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return null;
+                return { x, y, z };
+            }
+
+            function getCurveCtrl(curveObj) {
+                const P0 = readPoint3(curveObj.p0x, curveObj.p0y, curveObj.p0z);
+                const P1 = readPoint3(curveObj.p1x, curveObj.p1y, curveObj.p1z);
+                const P2 = readPoint3(curveObj.p2x, curveObj.p2y, curveObj.p2z);
+                const P3 = readPoint3(curveObj.p3x, curveObj.p3y, curveObj.p3z);
+                return { P0, P1, P2, P3 };
+            }
+
+            function curvePoint(type, P0, P1, P2, P3, u) {
+                if (type === "segment") return lerp3(P0, P1, u);
+                if (type === "parabola") return bezier2(P0, P1, P2, u);
+                return bezier3(P0, P1, P2, P3, u);
+            }
+
+            // поверхность между двумя кривыми [web:429][web:438]
+            function surfacePoint(C0u, C1u, v) {
+                return lerp3(C0u, C1u, v);
+            }
+
+            // ---------- UI helpers ----------
+            function updateCurveVisibility() {
+                const t0 = type0El.value;
+                c0.row1.style.display = (t0 === "segment") ? "" : "";
+                c0.row2.style.display = (t0 === "segment") ? "none" : "";
+                c0.row3.style.display = (t0 === "bezier") ? "" : "none";
+
+                // для segment нужны P0,P1 => row1 видим, row2/row3 скрываем
+                if (t0 === "segment") { c0.row2.style.display = "none"; c0.row3.style.display = "none"; }
+                if (t0 === "parabola") { c0.row2.style.display = ""; c0.row3.style.display = "none"; }
+                if (t0 === "bezier") { c0.row2.style.display = ""; c0.row3.style.display = ""; }
+
+                const t1 = type1El.value;
+                if (t1 === "segment") { c1.row2.style.display = "none"; c1.row3.style.display = "none"; }
+                if (t1 === "parabola") { c1.row2.style.display = ""; c1.row3.style.display = "none"; }
+                if (t1 === "bezier") { c1.row2.style.display = ""; c1.row3.style.display = ""; }
+            }
+
+            // ---------- Drawing ----------
+            function clearCanvas() {
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            function drawError(text) {
+                ctx.save();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.fillStyle = "#b91c1c";
+                ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+                ctx.fillText(text, 12, 20);
+                ctx.restore();
+            }
+
+            function drawAxes(rx, ry, scale2d) {
+                const L = 160;
+                const O = { x: 0, y: 0, z: 0 };
+                const X = { x: L, y: 0, z: 0 };
+                const Y = { x: 0, y: L, z: 0 };
+                const Z = { x: 0, y: 0, z: L };
+
+                const axes = [
+                    { a: O, b: X, c: "#e53e3e" },
+                    { a: O, b: Y, c: "#48bb78" },
+                    { a: O, b: Z, c: "#667eea" }
+                ];
+
+                for (const ax of axes) {
+                    const A = projectOrtho(applyView(ax.a, rx, ry), scale2d);
+                    const B = projectOrtho(applyView(ax.b, rx, ry), scale2d);
+                    ctx.save();
+                    ctx.strokeStyle = ax.c;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(A.x, A.y);
+                    ctx.lineTo(B.x, B.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            function drawSurfaceWireframe(P0, P1, P2, P3, Q0, Q1, Q2, Q3, type0, type1, rx, ry, scale2d, nu, nv) {
+                ctx.save();
+                ctx.strokeStyle = "#2d3748";
+                ctx.lineWidth = 1.4;
+
+                // u=const
+                for (let i = 0; i <= nu; i++) {
+                    const u = i / nu;
+                    const C0u = curvePoint(type0, P0, P1, P2, P3, u);
+                    const C1u = curvePoint(type1, Q0, Q1, Q2, Q3, u);
+
+                    ctx.beginPath();
+                    for (let j = 0; j <= nv; j++) {
+                        const v = j / nv;
+                        const S = surfacePoint(C0u, C1u, v);
+                        const s2 = projectOrtho(applyView(S, rx, ry), scale2d);
+                        if (j === 0) ctx.moveTo(s2.x, s2.y);
+                        else ctx.lineTo(s2.x, s2.y);
+                    }
+                    ctx.stroke();
+                }
+
+                // v=const
+                for (let j = 0; j <= nv; j++) {
+                    const v = j / nv;
+                    ctx.beginPath();
+                    for (let i = 0; i <= nu; i++) {
+                        const u = i / nu;
+                        const C0u = curvePoint(type0, P0, P1, P2, P3, u);
+                        const C1u = curvePoint(type1, Q0, Q1, Q2, Q3, u);
+                        const S = surfacePoint(C0u, C1u, v);
+                        const s2 = projectOrtho(applyView(S, rx, ry), scale2d);
+                        if (i === 0) ctx.moveTo(s2.x, s2.y);
+                        else ctx.lineTo(s2.x, s2.y);
+                    }
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+
+            function drawCurve(type, A0, A1, A2, A3, rx, ry, scale2d, nu, color) {
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                for (let i = 0; i <= nu; i++) {
+                    const u = i / nu;
+                    const p = curvePoint(type, A0, A1, A2, A3, u);
+                    const s2 = projectOrtho(applyView(p, rx, ry), scale2d);
+                    if (i === 0) ctx.moveTo(s2.x, s2.y);
+                    else ctx.lineTo(s2.x, s2.y);
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // ---------- Render ----------
+            function render() {
+                updateCurveVisibility();
+
+                rxLabel.textContent = String(rxEl.value);
+                ryLabel.textContent = String(ryEl.value);
+                nuLabel.textContent = String(nuEl.value);
+                nvLabel.textContent = String(nvEl.value);
+                scaleLabel.textContent = String(scaleEl.value);
+
+                const rx = degToRad(Number(rxEl.value));
+                const ry = degToRad(Number(ryEl.value));
+                const nu = Math.max(2, Number(nuEl.value));
+                const nv = Math.max(1, Number(nvEl.value));
+                const scale2d = Number(scaleEl.value);
+
+                const type0 = type0El.value;
+                const type1 = type1El.value;
+
+                const A = getCurveCtrl(c0);
+                const B = getCurveCtrl(c1);
+
+                clearCanvas();
+
+                // проверяем нужные точки в зависимости от типа
+                function needPts(type, ctrl) {
+                    if (!ctrl.P0 || !ctrl.P1) return false;
+                    if (type === "segment") return true;
+                    if (type === "parabola") return !!ctrl.P2;
+                    return !!ctrl.P2 && !!ctrl.P3;
+                }
+
+                if (!needPts(type0, A) || !needPts(type1, B)) {
+                    drawError("Ошибка: заполните нужные контрольные точки для выбранных типов кривых.");
+                    return;
+                }
+
+                if (showAxesEl.checked) drawAxes(rx, ry, scale2d);
+
+                drawSurfaceWireframe(
+                    A.P0, A.P1, A.P2, A.P3,
+                    B.P0, B.P1, B.P2, B.P3,
+                    type0, type1, rx, ry, scale2d, nu, nv
+                );
+
+                // подсветим границы
+                drawCurve(type0, A.P0, A.P1, A.P2, A.P3, rx, ry, scale2d, nu, "#e53e3e");
+                drawCurve(type1, B.P0, B.P1, B.P2, B.P3, rx, ry, scale2d, nu, "#3182ce");
+            }
+
+            // ---------- Events ----------
+            const allNumericInputs = [
+                c0.p0x, c0.p0y, c0.p0z, c0.p1x, c0.p1y, c0.p1z, c0.p2x, c0.p2y, c0.p2z, c0.p3x, c0.p3y, c0.p3z,
+                c1.p0x, c1.p0y, c1.p0z, c1.p1x, c1.p1y, c1.p1z, c1.p2x, c1.p2y, c1.p2z, c1.p3x, c1.p3y, c1.p3z
+            ];
+
+            [type0El, type1El, rxEl, ryEl, nuEl, nvEl, scaleEl, showAxesEl, ...allNumericInputs].forEach(el => {
+                el.addEventListener("input", render);
+                el.addEventListener("change", render);
+            });
+
+            resetBtn.addEventListener("click", () => {
+                type0El.value = "segment";
+                type1El.value = "parabola";
+
+                // C0 (segment uses P0,P1)
+                c0.p0x.value = -200; c0.p0y.value = -80; c0.p0z.value = -60;
+                c0.p1x.value = 220; c0.p1y.value = -120; c0.p1z.value = 40;
+                c0.p2x.value = 80; c0.p2y.value = -80; c0.p2z.value = -40;
+                c0.p3x.value = 220; c0.p3y.value = -120; c0.p3z.value = 40;
+
+                // C1 (parabola uses Q0,Q1,Q2)
+                c1.p0x.value = -220; c1.p0y.value = 80; c1.p0z.value = 80;
+                c1.p1x.value = -40; c1.p1y.value = 160; c1.p1z.value = -40;
+                c1.p2x.value = 120; c1.p2y.value = 80; c1.p2z.value = 60;
+                c1.p3x.value = 240; c1.p3y.value = 140; c1.p3z.value = -60;
+
+                rxEl.value = "20";
+                ryEl.value = "35";
+                nuEl.value = "30";
+                nvEl.value = "16";
+                scaleEl.value = "1";
+                showAxesEl.checked = true;
+
+                render();
+            });
+
+            render();
+        });
+    </script>
+
+</body>
+
+</html>

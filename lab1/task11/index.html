@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лабораторная работа по компьютерной графике</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .navigation {
+      background: #2d3748;
+      padding: 15px 30px;
+      border-bottom: 3px solid #1a202c;
+    }
+
+    .nav-btn {
+      min-width: 80px;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+    }
+
+    .lab-info {
+      background: #f7fafc;
+      padding: 20px 30px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .canvas-wrapper {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #canvas {
+      background: white;
+      border: 1px solid #a0aec0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls-panel {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 25px;
+      overflow-y: auto;
+      max-height: 700px;
+    }
+
+    .controls-panel h3 {
+      color: #2d3748;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #cbd5e0;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Заголовок курса -->
+    <div class="header">
+      <h1 class="mb-2">Лабораторная работа 1</h1>
+      <h2 class="h4 fw-light opacity-75">Сформировать отрезок, касательный к двум заданным окружностям с
+внешней стороны, определив предварительно координаты точек касания.
+Необходимо предусмотреть возможность редактирования положения и параметры окружностей.
+      </h2>
+    </div>
+
+    <!-- Рабочая область -->
+    <div class="row g-3 p-4">
+      <!-- Область Canvas -->
+      <div class="col-lg-8">
+        <div class="canvas-wrapper">
+          <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+
+      <!-- Панель управления -->
+      <div class="col-lg-4">
+        <div class="controls-panel">
+          <h3 class="h5 mb-3">Контроллеры</h3>
+
+          <div id="controls">
+            <div class="mb-3">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="et_showSecond" checked>
+      <label class="form-check-label" for="et_showSecond">Показать обе внешние касательные (если существуют)</label>
+    </div>
+
+    <div class="form-check mt-2">
+      <input class="form-check-input" type="checkbox" id="et_showHelpers" checked>
+      <label class="form-check-label" for="et_showHelpers">Показать вспомогательные линии</label>
+    </div>
+
+    <hr class="my-3">
+
+    <div class="mt-2">
+      <label class="form-label" for="et_r1">Радиус R1: <span id="et_r1Label">90</span></label>
+      <input class="form-range" type="range" id="et_r1" min="5" max="250" step="1" value="90">
+    </div>
+
+    <div class="mt-2">
+      <label class="form-label" for="et_r2">Радиус R2: <span id="et_r2Label">60</span></label>
+      <input class="form-range" type="range" id="et_r2" min="5" max="250" step="1" value="60">
+    </div>
+
+    <hr class="my-3">
+    <div class="small text-secondary">
+      Перетаскивание: C1 — красная точка, C2 — синяя точка.
+    </div>
+  </div>
+
+  <div class="d-grid gap-2">
+    <button class="btn btn-outline-secondary" id="et_reset" type="button">Сброс</button>
+  </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // ---------- DOM ----------
+    function requireEl(id) {
+      const n = document.getElementById(id);
+      if (!n) throw new Error(`Не найден элемент id="${id}"`);
+      return n;
+    }
+
+    const canvas = requireEl("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("canvas.getContext('2d') вернул null.");
+
+    const showSecondEl = requireEl("et_showSecond");
+    const showHelpersEl = requireEl("et_showHelpers");
+
+    const r1El = requireEl("et_r1");
+    const r2El = requireEl("et_r2");
+    const r1Label = requireEl("et_r1Label");
+    const r2Label = requireEl("et_r2Label");
+
+    const resetBtn = requireEl("et_reset");
+
+    // ---------- World mapping (0,0 center; Y up) ----------
+    function clearCanvas() {
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+
+    function withWorld(drawFn) {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      ctx.save();
+      ctx.setTransform(1, 0, 0, -1, cx, cy);
+      drawFn();
+      ctx.restore();
+    }
+
+    function screenToWorld(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const px = (clientX - rect.left) * (canvas.width / rect.width);
+      const py = (clientY - rect.top)  * (canvas.height / rect.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      return { x: px - cx, y: cy - py };
+    }
+
+    // ---------- Geometry helpers ----------
+    function sub(a,b){ return {x:a.x-b.x, y:a.y-b.y}; }
+    function add(a,b){ return {x:a.x+b.x, y:a.y+b.y}; }
+    function mul(a,s){ return {x:a.x*s, y:a.y*s}; }
+    function dot(a,b){ return a.x*b.x + a.y*b.y; }
+    function norm(a){ return Math.hypot(a.x, a.y); }
+    function normalize(a){ const n = norm(a) || 1; return {x:a.x/n, y:a.y/n}; }
+    function perp(a){ return {x:-a.y, y:a.x}; } // +90°
+    function dist2(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return dx*dx+dy*dy; }
+
+    // Точки касания из точки P к окружности (C, r). [web:377]
+    function tangentPointsPointCircle(P, C, r) {
+      const v = sub(P, C);
+      const d = norm(v);
+
+      if (d < r - 1e-9) return { kind: "inside", points: [] };
+      if (Math.abs(d - r) <= 1e-9) return { kind: "on", points: [ { x: P.x, y: P.y } ] };
+
+      const u = normalize(v);
+      const n = perp(u);
+
+      const a = (r * r) / d;
+      const h = (r * Math.sqrt(d*d - r*r)) / d;
+
+      const T1 = add(C, add(mul(u, a), mul(n,  h)));
+      const T2 = add(C, add(mul(u, a), mul(n, -h)));
+
+      return { kind: "outside", points: [T1, T2] };
+    }
+
+    // ---------- External common tangents ----------
+    // Внешняя касательная: сведение к касательной из C2 к окружности (C1, |r1-r2|). [web:399][web:404]
+    // Далее:
+    // - нормаль n берём по радиусу к точке касания на "разностной" окружности
+    // - касание к окружности 1: T1 = C1 + n * r1
+    // - касание к окружности 2: T2 = C2 + n * r2   (ВАЖНО: тот же знак, в отличие от внутренней касательной)
+    function externalCommonTangents(C1, r1, C2, r2) {
+      const dr = Math.abs(r1 - r2);
+
+      // Дегенеративный случай: равные радиусы
+      // Тогда dr=0, и касательные определяются просто как линии, параллельные C1C2 на расстоянии r.
+      // Но наш общий метод тоже работает, если трактовать окружность (C1,0) как точку C1:
+      // tangentPointsPointCircle(C2, C1, 0) даст одну точку касания (сам C1), что не даёт двух касательных.
+      // Поэтому сделаем отдельную ветку для r1≈r2.
+      if (Math.abs(r1 - r2) < 1e-9) {
+        const v = sub(C2, C1);
+        const d = norm(v);
+        if (d < 1e-9) return { kind: "coincident", tangents: [] };
+
+        const u = normalize(v);
+        const n1 = perp(u);
+        const n2 = mul(n1, -1);
+
+        const tA = { n: n1, dir: u, T1: add(C1, mul(n1, r1)), T2: add(C2, mul(n1, r2)) };
+        const tB = { n: n2, dir: u, T1: add(C1, mul(n2, r1)), T2: add(C2, mul(n2, r2)) };
+        return { kind: "ok", tangents: [tA, tB] };
+      }
+
+      // Определяем, какую окружность "уменьшаем":
+      // Чтобы корректно получить нормаль n, удобно работать так:
+      // считаем, что dr = r_big - r_small, и строим касательные из центра меньшей к окружности big с радиусом dr.
+      // Для простоты вычислений используем Cbig = центр большей окружности, Csmall = центр меньшей.
+      let Cbig = C1, Rbig = r1, Csmall = C2, Rsmall = r2;
+      if (r2 > r1) { Cbig = C2; Rbig = r2; Csmall = C1; Rsmall = r1; }
+
+      const R = Rbig - Rsmall; // >0
+
+      // касательные из Csmall к окружности (Cbig, R)
+      const tang = tangentPointsPointCircle(Csmall, Cbig, R);
+      if (tang.kind !== "outside") return { kind: "none", tangents: [] };
+
+      const tangents = tang.points.map((U) => {
+        const n = normalize(sub(U, Cbig)); // нормаль (в сторону касания к "разностной" окружности)
+        const dir = perp(n);
+
+        // Теперь восстановим точки касания к исходным окружностям:
+        // Для внешней касательной обе окружности касаются с ОДНОЙ стороны прямой => один и тот же знак по нормали. [web:399]
+        // Но мы считали "big/small", поэтому:
+        const Tbig = add(Cbig, mul(n, Rbig));
+        const Tsmall = add(Csmall, mul(n, Rsmall));
+
+        // Вернём в порядке (C1,r1) и (C2,r2), чтобы потребителю было просто
+        let T1, T2;
+        if (Cbig === C1) {
+          T1 = Tbig;   // касание к окружности 1
+          T2 = Tsmall; // касание к окружности 2
+        } else {
+          T1 = Tsmall;
+          T2 = Tbig;
+        }
+
+        return { n, dir, T1, T2 };
+      });
+
+      return { kind: "ok", tangents };
+    }
+
+    // ---------- Drawing primitives ----------
+    function drawAxes() {
+      withWorld(() => {
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-canvas.width/2, 0);
+        ctx.lineTo( canvas.width/2, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, -canvas.height/2);
+        ctx.lineTo(0,  canvas.height/2);
+        ctx.stroke();
+      });
+    }
+
+    function drawCircle(C, r, stroke) {
+      withWorld(() => {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(C.x, C.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+    }
+
+    function drawPoint(pt, color, radius=6) {
+      withWorld(() => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawSegment(a, b, style, width=2, dashed=false) {
+      withWorld(() => {
+        ctx.save();
+        ctx.strokeStyle = style;
+        ctx.lineWidth = width;
+        ctx.setLineDash(dashed ? [6,6] : []);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+
+    function drawInfiniteLineThroughPointDir(P0, dir, style, width=2) {
+      const K = 2000;
+      const A = add(P0, mul(dir, -K));
+      const B = add(P0, mul(dir,  K));
+      drawSegment(A, B, style, width, false);
+    }
+
+    function drawStatusText(text) {
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.fillStyle = "#2d3748";
+      ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.fillText(text, 12, 20);
+      ctx.restore();
+    }
+
+    // ---------- State ----------
+    let C1 = { x: -120, y: 0 };
+    let C2 = { x:  180, y: 60 };
+    let r1 = 90;
+    let r2 = 60;
+
+    // ---------- Render ----------
+    function render() {
+      r1 = Number(r1El.value);
+      r2 = Number(r2El.value);
+      r1Label.textContent = String(r1);
+      r2Label.textContent = String(r2);
+
+      clearCanvas();
+      drawAxes();
+
+      drawCircle(C1, r1, "#e53e3e");
+      drawCircle(C2, r2, "#3182ce");
+
+      const res = externalCommonTangents(C1, r1, C2, r2);
+
+      if (res.kind !== "ok") {
+        drawStatusText("Внешние общие касательные не определены (совпадение центров или вырождение).");
+      } else {
+        drawStatusText("Построены внешние общие касательные.");
+
+        const t0 = res.tangents[0];
+        drawInfiniteLineThroughPointDir(t0.T1, t0.dir, "#2d3748", 2.5);
+        drawSegment(t0.T1, t0.T2, "#2d3748", 3);
+
+        drawPoint(t0.T1, "#2d3748", 5);
+        drawPoint(t0.T2, "#2d3748", 5);
+
+        if (showHelpersEl.checked) {
+          drawSegment(C1, t0.T1, "rgba(229,62,62,0.45)", 1.5, false);
+          drawSegment(C2, t0.T2, "rgba(49,130,206,0.45)", 1.5, false);
+          drawSegment(C1, C2, "rgba(45,55,72,0.25)", 1.5, true);
+        }
+
+        if (showSecondEl.checked && res.tangents.length >= 2) {
+          const t1 = res.tangents[1];
+          drawInfiniteLineThroughPointDir(t1.T1, t1.dir, "#2d3748", 2.5);
+          drawSegment(t1.T1, t1.T2, "#2d3748", 3);
+
+          drawPoint(t1.T1, "#2d3748", 5);
+          drawPoint(t1.T2, "#2d3748", 5);
+
+          if (showHelpersEl.checked) {
+            drawSegment(C1, t1.T1, "rgba(229,62,62,0.45)", 1.5, false);
+            drawSegment(C2, t1.T2, "rgba(49,130,206,0.45)", 1.5, false);
+          }
+        }
+      }
+
+      // центры (drag handles)
+      drawPoint(C1, "#e53e3e", 6);
+      drawPoint(C2, "#3182ce", 6);
+    }
+
+    // ---------- Interaction (drag centers) ----------
+    const DragKind = { NONE: 0, C1: 1, C2: 2 };
+    const drag = { kind: DragKind.NONE };
+    const HIT_R2 = 14 * 14;
+
+    canvas.addEventListener("mousedown", (evt) => {
+      const w = screenToWorld(evt.clientX, evt.clientY);
+      if (dist2(w, C1) <= HIT_R2) { drag.kind = DragKind.C1; evt.preventDefault(); return; }
+      if (dist2(w, C2) <= HIT_R2) { drag.kind = DragKind.C2; evt.preventDefault(); return; }
+    });
+
+    canvas.addEventListener("mousemove", (evt) => {
+      if (drag.kind === DragKind.NONE) return;
+      const w = screenToWorld(evt.clientX, evt.clientY);
+      if (drag.kind === DragKind.C1) C1 = { x: w.x, y: w.y };
+      if (drag.kind === DragKind.C2) C2 = { x: w.x, y: w.y };
+      render();
+    });
+
+    function stopDrag() { drag.kind = DragKind.NONE; }
+    window.addEventListener("mouseup", stopDrag);
+    canvas.addEventListener("mouseleave", stopDrag);
+
+    // ---------- Controls ----------
+    [showSecondEl, showHelpersEl, r1El, r2El].forEach((n) => {
+      n.addEventListener("input", render);
+      n.addEventListener("change", render);
+    });
+
+    resetBtn.addEventListener("click", () => {
+      C1 = { x: -120, y: 0 };
+      C2 = { x:  180, y: 60 };
+      r1El.value = "90";
+      r2El.value = "60";
+      showSecondEl.checked = true;
+      showHelpersEl.checked = true;
+      render();
+    });
+
+    render();
+  });
+</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лабораторная работа по компьютерной графике</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .navigation {
+      background: #2d3748;
+      padding: 15px 30px;
+      border-bottom: 3px solid #1a202c;
+    }
+
+    .nav-btn {
+      min-width: 80px;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+    }
+
+    .lab-info {
+      background: #f7fafc;
+      padding: 20px 30px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .canvas-wrapper {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #canvas {
+      background: white;
+      border: 1px solid #a0aec0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls-panel {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 25px;
+      overflow-y: auto;
+      max-height: 700px;
+    }
+
+    .controls-panel h3 {
+      color: #2d3748;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #cbd5e0;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Заголовок курса -->
+    <div class="header">
+      <h1 class="mb-2">Лабораторная работа 1</h1>
+      <h2 class="h4 fw-light opacity-75">Поворот объемного тела относительно произвольной оси, заданной в
+        пространстве двумя точками, на заданный угол. Необходимо предусмотреть
+        возможность редактирования положения точек, определяющих положение
+        оси.
+      </h2>
+    </div>
+
+    <!-- Рабочая область -->
+    <div class="row g-3 p-4">
+      <!-- Область Canvas -->
+      <div class="col-lg-8">
+        <div class="canvas-wrapper">
+          <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+
+      <!-- Панель управления -->
+      <div class="col-lg-4">
+        <div class="controls-panel">
+          <h3 class="h5 mb-3">Контроллеры</h3>
+
+          <div id="controls">
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="showOriginal3D" checked>
+                <label class="form-check-label" for="showOriginal3D">Показать исходное тело</label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="showRotated3D" checked>
+                <label class="form-check-label" for="showRotated3D">Показать повёрнутое тело</label>
+              </div>
+
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="showAxis" checked>
+                <label class="form-check-label" for="showAxis">Показать ось вращения (A—B)</label>
+              </div>
+
+              <div class="mt-3">
+                <label class="form-label" for="angleDeg">Угол поворота (°): <span id="angleDegLabel">45</span></label>
+                <input class="form-range" type="range" id="angleDeg" min="-180" max="180" step="1" value="45">
+              </div>
+
+              <hr class="my-3">
+              <div class="fw-semibold mb-2">Ось (точки A и B)</div>
+
+              <div class="row g-2">
+                <div class="col-4">
+                  <label class="form-label" for="axisAx">Ax</label>
+                  <input class="form-control" type="number" id="axisAx" step="1" value="-120">
+                </div>
+                <div class="col-4">
+                  <label class="form-label" for="axisAy">Ay</label>
+                  <input class="form-control" type="number" id="axisAy" step="1" value="40">
+                </div>
+                <div class="col-4">
+                  <label class="form-label" for="axisAz">Az</label>
+                  <input class="form-control" type="number" id="axisAz" step="1" value="0">
+                </div>
+
+                <div class="col-4">
+                  <label class="form-label" for="axisBx">Bx</label>
+                  <input class="form-control" type="number" id="axisBx" step="1" value="140">
+                </div>
+                <div class="col-4">
+                  <label class="form-label" for="axisBy">By</label>
+                  <input class="form-control" type="number" id="axisBy" step="1" value="-60">
+                </div>
+                <div class="col-4">
+                  <label class="form-label" for="axisBz">Bz</label>
+                  <input class="form-control" type="number" id="axisBz" step="1" value="60">
+                </div>
+              </div>
+
+              <hr class="my-3">
+              <div class="fw-semibold mb-2">Поворот вида</div>
+
+              <div class="mt-1">
+                <label class="form-label" for="viewAngleX">Вид: вокруг X (°): <span
+                    id="viewAngleXLabel">-20</span></label>
+                <input class="form-range" type="range" id="viewAngleX" min="-180" max="180" step="1" value="-20">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label" for="viewAngleY">Вид: вокруг Y (°): <span
+                    id="viewAngleYLabel">35</span></label>
+                <input class="form-range" type="range" id="viewAngleY" min="-180" max="180" step="1" value="35">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label" for="viewAngleZ">Вид: вокруг Z (°): <span
+                    id="viewAngleZLabel">0</span></label>
+                <input class="form-range" type="range" id="viewAngleZ" min="-180" max="180" step="1" value="0">
+              </div>
+
+              <hr class="my-3">
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="usePerspective" checked>
+                <label class="form-check-label" for="usePerspective">Перспективная проекция</label>
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label" for="camDist">Дистанция камеры: <span id="camDistLabel">500</span></label>
+                <input class="form-range" type="range" id="camDist" min="200" max="1400" step="10" value="500">
+              </div>
+
+              <hr class="my-3">
+              <div class="small text-secondary">
+                Перетаскиванием можно двигать точку в пространстве.
+              </div>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-secondary" id="reset3D" type="button">Сброс</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // ---------- DOM ----------
+      function requireEl(id) {
+        const n = document.getElementById(id);
+        if (!n) throw new Error(`Не найден элемент id="${id}"`);
+        return n;
+      }
+
+      const canvas = requireEl("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("canvas.getContext('2d') вернул null.");
+
+      const showOriginalEl = requireEl("showOriginal3D");
+      const showRotatedEl = requireEl("showRotated3D");
+      const showAxisEl = requireEl("showAxis");
+
+      const angleEl = requireEl("angleDeg");
+      const angleLabelEl = requireEl("angleDegLabel");
+
+      const axisAxEl = requireEl("axisAx");
+      const axisAyEl = requireEl("axisAy");
+      const axisAzEl = requireEl("axisAz");
+      const axisBxEl = requireEl("axisBx");
+      const axisByEl = requireEl("axisBy");
+      const axisBzEl = requireEl("axisBz");
+
+      const viewXEl = requireEl("viewAngleX");
+      const viewYEl = requireEl("viewAngleY");
+      const viewZEl = requireEl("viewAngleZ");
+      const viewXLabel = requireEl("viewAngleXLabel");
+      const viewYLabel = requireEl("viewAngleYLabel");
+      const viewZLabel = requireEl("viewAngleZLabel");
+
+      const usePerspectiveEl = requireEl("usePerspective");
+      const camDistEl = requireEl("camDist");
+      const camDistLabelEl = requireEl("camDistLabel");
+
+      const resetBtn = requireEl("reset3D");
+
+      // ---------- Helpers ----------
+      const degToRad = (d) => d * Math.PI / 180;
+
+      function clearCanvas() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function drawAxes2D() {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        ctx.save();
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        ctx.moveTo(0, cy);
+        ctx.lineTo(canvas.width, cy);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx, canvas.height);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      // ---------- 3D math ----------
+      function add(a, b) { return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z }; }
+      function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }; }
+      function mul(a, s) { return { x: a.x * s, y: a.y * s, z: a.z * s }; }
+      function dot(a, b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+      function cross(a, b) { return { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x }; }
+      function norm(a) { return Math.hypot(a.x, a.y, a.z); }
+      function normalize(a) { const n = norm(a) || 1; return { x: a.x / n, y: a.y / n, z: a.z / n }; }
+
+      // ---------- Rotations (XYZ) ----------
+      function rotateX(p, rad) {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return { x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c };
+      }
+      function rotateY(p, rad) {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return { x: p.x * c + p.z * s, y: p.y, z: -p.x * s + p.z * c };
+      }
+      function rotateZ(p, rad) {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return { x: p.x * c - p.y * s, y: p.x * s + p.y * c, z: p.z };
+      }
+      function applyRotationXYZ(p, rx, ry, rz) {
+        let v = rotateX(p, rx);
+        v = rotateY(v, ry);
+        v = rotateZ(v, rz);
+        return v;
+      }
+
+      // Инверсия Эйлеровых поворотов: обратный порядок и отрицательные углы. [web:228]
+      function applyInverseRotationXYZ(p, rx, ry, rz) {
+        let v = rotateZ(p, -rz);
+        v = rotateY(v, -ry);
+        v = rotateX(v, -rx);
+        return v;
+      }
+
+      // ---------- Rodrigues rotation about arbitrary axis A->B ----------
+      // v' = v cosθ + (k×v) sinθ + k(k·v)(1−cosθ), where k is unit axis. [web:236][web:240]
+      function rotateAroundAxis(P, A, B, rad) {
+        const v = sub(P, A);
+        const k = normalize(sub(B, A));
+        const c = Math.cos(rad), s = Math.sin(rad);
+        const term1 = mul(v, c);
+        const term2 = mul(cross(k, v), s);
+        const term3 = mul(k, dot(k, v) * (1 - c));
+        return add(A, add(add(term1, term2), term3));
+      }
+
+      // ---------- Projection ----------
+      // Simple perspective: x' ~ x / z (similar triangles). [web:254]
+      function projectViewToScreen(pView) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        if (!usePerspectiveEl.checked) {
+          return { x: cx + pView.x, y: cy - pView.y, ok: true };
+        }
+
+        const cam = Number(camDistEl.value);
+        const z = pView.z + cam;
+        if (z <= 1) return { x: 0, y: 0, ok: false };
+
+        const k = 700;
+        return {
+          x: cx + (pView.x * k) / z,
+          y: cy - (pView.y * k) / z,
+          ok: true
+        };
+      }
+
+      // Invert projection to get view-space X/Y given screen X/Y and fixed view-space Z.
+      function screenToViewXY(canvasX, canvasY, fixedViewZ) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        const sx = canvasX - cx;
+        const sy = -(canvasY - cy);
+
+        if (!usePerspectiveEl.checked) {
+          return { x: sx, y: sy, z: fixedViewZ };
+        }
+
+        const cam = Number(camDistEl.value);
+        const k = 700;
+        const denom = fixedViewZ + cam;
+        return {
+          x: (sx * denom) / k,
+          y: (sy * denom) / k,
+          z: fixedViewZ
+        };
+      }
+
+      // ---------- Body (wireframe cube) ----------
+      function makeCube(minX, minY, minZ, maxX, maxY, maxZ) {
+        const v = [
+          { x: minX, y: minY, z: minZ }, { x: maxX, y: minY, z: minZ }, { x: maxX, y: maxY, z: minZ }, { x: minX, y: maxY, z: minZ },
+          { x: minX, y: minY, z: maxZ }, { x: maxX, y: minY, z: maxZ }, { x: maxX, y: maxY, z: maxZ }, { x: minX, y: maxY, z: maxZ }
+        ];
+        const e = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+        return { vertices: v, edges: e };
+      }
+      let body = makeCube(-80, -80, -80, 80, 80, 80);
+
+      // ---------- Axis points ----------
+      let axisA = { x: -120, y: 40, z: 0 };
+      let axisB = { x: 140, y: -60, z: 60 };
+
+      function syncAxisInputsFromState() {
+        axisAxEl.value = String(Math.round(axisA.x));
+        axisAyEl.value = String(Math.round(axisA.y));
+        axisAzEl.value = String(Math.round(axisA.z));
+        axisBxEl.value = String(Math.round(axisB.x));
+        axisByEl.value = String(Math.round(axisB.y));
+        axisBzEl.value = String(Math.round(axisB.z));
+      }
+
+      function syncAxisStateFromInputs() {
+        axisA = {
+          x: Number(axisAxEl.value) || 0,
+          y: Number(axisAyEl.value) || 0,
+          z: Number(axisAzEl.value) || 0
+        };
+        axisB = {
+          x: Number(axisBxEl.value) || 0,
+          y: Number(axisByEl.value) || 0,
+          z: Number(axisBzEl.value) || 0
+        };
+      }
+
+      // ---------- View rotation (camera-like) ----------
+      function getViewAnglesRad() {
+        return {
+          rx: degToRad(Number(viewXEl.value)),
+          ry: degToRad(Number(viewYEl.value)),
+          rz: degToRad(Number(viewZEl.value))
+        };
+      }
+
+      // World -> View
+      function toView(pWorld) {
+        const { rx, ry, rz } = getViewAnglesRad();
+        // реализуем "поворот вида" как обратный поворот сцены (camera view). [web:228]
+        return applyInverseRotationXYZ(pWorld, rx, ry, rz);
+      }
+
+      // View -> World
+      function fromView(pView) {
+        const { rx, ry, rz } = getViewAnglesRad();
+        // обратная операция к toView
+        return applyRotationXYZ(pView, rx, ry, rz);
+      }
+
+      // ---------- Drawing ----------
+      function drawWireframeWorld(vertices, edges, style) {
+        const projected = vertices.map((pWorld) => projectViewToScreen(toView(pWorld)));
+
+        ctx.save();
+        ctx.strokeStyle = style;
+        ctx.lineWidth = 2;
+
+        for (const [i, j] of edges) {
+          const a = projected[i], b = projected[j];
+          if (!a.ok || !b.ok) continue;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function drawAxisAB() {
+        const A = projectViewToScreen(toView(axisA));
+        const B = projectViewToScreen(toView(axisB));
+
+        // Если хотя бы одна точка "за камерой", рисуем только ручки (они тоже могут не рисоваться)
+        // но линия не будет пытаться уходить в бесконечность.
+        if (A.ok && B.ok) {
+          ctx.save();
+          ctx.strokeStyle = "#e53e3e";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(A.x, A.y);
+          ctx.lineTo(B.x, B.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // handles
+        [axisA, axisB].forEach((pt) => {
+          const s = projectViewToScreen(toView(pt));
+          if (!s.ok) return;
+          ctx.save();
+          ctx.fillStyle = "#e53e3e";
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      function render() {
+        angleLabelEl.textContent = String(angleEl.value);
+        camDistLabelEl.textContent = String(camDistEl.value);
+
+        viewXLabel.textContent = String(viewXEl.value);
+        viewYLabel.textContent = String(viewYEl.value);
+        viewZLabel.textContent = String(viewZEl.value);
+
+        clearCanvas();
+        drawAxes2D();
+
+        if (showAxisEl.checked) drawAxisAB();
+
+        if (showOriginalEl.checked) {
+          drawWireframeWorld(body.vertices, body.edges, "#a0aec0");
+        }
+
+        if (showRotatedEl.checked) {
+          const rad = degToRad(Number(angleEl.value));
+          const rotatedVerts = body.vertices.map((p) => rotateAroundAxis(p, axisA, axisB, rad));
+          drawWireframeWorld(rotatedVerts, body.edges, "#2d3748");
+        }
+      }
+
+      // ---------- Interaction: drag axis endpoints in full 3D (view space + Shift for depth) ----------
+      function clientToCanvasXY(evt) {
+        const r = canvas.getBoundingClientRect();
+        return {
+          x: (evt.clientX - r.left) * (canvas.width / r.width),
+          y: (evt.clientY - r.top) * (canvas.height / r.height)
+        };
+      }
+
+      const HANDLE_THR = 14; // pixels
+      const DragKind = { NONE: 0, A: 1, B: 2 };
+      const drag = {
+        kind: DragKind.NONE,
+        startMouse: null,
+        startView: null  // view-space coords of the dragged point at drag start
+      };
+
+      function hitHandle(worldPoint, mx, my) {
+        const s = projectViewToScreen(toView(worldPoint));
+        if (!s.ok) return false;
+        const dx = s.x - mx, dy = s.y - my;
+        return (dx * dx + dy * dy) <= HANDLE_THR * HANDLE_THR;
+      }
+
+      canvas.addEventListener("mousedown", (evt) => {
+        const m = clientToCanvasXY(evt);
+
+        if (hitHandle(axisA, m.x, m.y)) {
+          drag.kind = DragKind.A;
+        } else if (hitHandle(axisB, m.x, m.y)) {
+          drag.kind = DragKind.B;
+        } else {
+          drag.kind = DragKind.NONE;
+          return;
+        }
+
+        drag.startMouse = m;
+        drag.startView = toView(drag.kind === DragKind.A ? axisA : axisB);
+        evt.preventDefault();
+      });
+
+      canvas.addEventListener("mousemove", (evt) => {
+        if (drag.kind === DragKind.NONE) return;
+
+        const m = clientToCanvasXY(evt);
+
+        // fixed depth in view space; shift -> change depth
+        const dy = m.y - drag.startMouse.y;
+        const zStep = 1.0; // world-ish units per pixel in view space
+
+        let newZ = drag.startView.z;
+        if (evt.shiftKey) {
+          newZ = drag.startView.z + (-dy) * zStep;
+        }
+
+        const pv = screenToViewXY(m.x, m.y, newZ);
+        const pw = fromView(pv);
+
+        if (drag.kind === DragKind.A) axisA = pw;
+        if (drag.kind === DragKind.B) axisB = pw;
+
+        syncAxisInputsFromState();
+        render();
+      });
+
+      function stopDrag() {
+        drag.kind = DragKind.NONE;
+        drag.startMouse = null;
+        drag.startView = null;
+      }
+      window.addEventListener("mouseup", stopDrag);
+      canvas.addEventListener("mouseleave", stopDrag);
+
+      // ---------- Controls ----------
+      // axis numeric inputs
+      [axisAxEl, axisAyEl, axisAzEl, axisBxEl, axisByEl, axisBzEl].forEach((n) => {
+        n.addEventListener("input", () => {
+          syncAxisStateFromInputs();
+          render();
+        });
+      });
+
+      // other controls
+      [
+        showOriginalEl, showRotatedEl, showAxisEl,
+        angleEl, usePerspectiveEl, camDistEl,
+        viewXEl, viewYEl, viewZEl
+      ].forEach((n) => {
+        n.addEventListener("input", render);
+        n.addEventListener("change", render);
+      });
+
+      resetBtn.addEventListener("click", () => {
+        body = makeCube(-80, -80, -80, 80, 80, 80);
+
+        axisA = { x: -120, y: 40, z: 0 };
+        axisB = { x: 140, y: -60, z: 60 };
+        syncAxisInputsFromState();
+
+        showOriginalEl.checked = true;
+        showRotatedEl.checked = true;
+        showAxisEl.checked = true;
+
+        angleEl.value = "45";
+        usePerspectiveEl.checked = true;
+        camDistEl.value = "500";
+
+        viewXEl.value = "-20";
+        viewYEl.value = "35";
+        viewZEl.value = "0";
+
+        render();
+      });
+
+      // старт
+      syncAxisInputsFromState();
+      render();
+    });
+  </script>
+
+
+</body>
+
+</html>

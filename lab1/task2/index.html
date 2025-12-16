@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа по компьютерной графике</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .navigation {
+            background: #2d3748;
+            padding: 15px 30px;
+            border-bottom: 3px solid #1a202c;
+        }
+
+        .nav-btn {
+            min-width: 80px;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #fff;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+        }
+
+        .lab-info {
+            background: #f7fafc;
+            padding: 20px 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .canvas-wrapper {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            background: white;
+            border: 1px solid #a0aec0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls-panel {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 25px;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .controls-panel h3 {
+            color: #2d3748;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #cbd5e0;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Заголовок курса -->
+        <div class="header">
+            <h1 class="mb-2">Лабораторная работа 1</h1>
+            <h2 class="h4 fw-light opacity-75">Отображение плоского объекта относительно прямой, заданной двумя точками,
+                с возможностью редактирования положения этих точек.
+            </h2>
+        </div>
+
+        <!-- Рабочая область -->
+        <div class="row g-3 p-4">
+            <!-- Область Canvas -->
+            <div class="col-lg-8">
+                <div class="canvas-wrapper">
+                    <canvas id="canvas" width="800" height="600"></canvas>
+                </div>
+            </div>
+
+            <!-- Панель управления -->
+            <div class="col-lg-4">
+                <div class="controls-panel">
+                    <h3 class="h5 mb-3">Контроллеры</h3>
+
+                    <div id="controls">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="showOriginal" checked>
+                                <label class="form-check-label" for="showOriginal">Показать оригинал</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="showReflection" checked>
+                                <label class="form-check-label" for="showReflection">Показать отражение</label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-secondary" id="resetBtn" type="button">Сброс</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // ---------- Required DOM ----------
+            function requireEl(id) {
+                const node = document.getElementById(id);
+                if (!node) throw new Error(`Не найден элемент с id="${id}". Проверьте HTML.`);
+                return node;
+            }
+
+            const canvas = requireEl("canvas");
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("canvas.getContext('2d') вернул null.");
+
+            const showOriginalEl = requireEl("showOriginal");
+            const showReflectionEl = requireEl("showReflection");
+            const resetBtn = requireEl("resetBtn");
+
+            // ---------- State ----------
+            let polygon = [
+                { x: 80, y: 60 },
+                { x: 170, y: 60 },
+                { x: 150, y: 140 },
+                { x: 60, y: 120 }
+            ];
+
+            // Прямая задаётся двумя точками
+            let lineA = { x: -150, y: -50 };
+            let lineB = { x: 200, y: 100 };
+
+            // ---------- World/screen mapping ----------
+            function clearCanvas() {
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            function withWorldTransform(drawFn) {
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                ctx.save();
+                // (0,0) в центре, Y вверх
+                ctx.setTransform(1, 0, 0, -1, cx, cy);
+                drawFn();
+                ctx.restore();
+            }
+
+            function drawAxes() {
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+
+                withWorldTransform(() => {
+                    ctx.strokeStyle = "#cbd5e0";
+                    ctx.lineWidth = 1;
+
+                    ctx.beginPath();
+                    ctx.moveTo(-cx, 0);
+                    ctx.lineTo(cx, 0);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, -cy);
+                    ctx.lineTo(0, cy);
+                    ctx.stroke();
+
+                    const tick = 6, step = 50;
+                    ctx.strokeStyle = "#e2e8f0";
+                    ctx.beginPath();
+                    for (let x = -cx; x <= cx; x += step) { ctx.moveTo(x, -tick); ctx.lineTo(x, tick); }
+                    for (let y = -cy; y <= cy; y += step) { ctx.moveTo(-tick, y); ctx.lineTo(tick, y); }
+                    ctx.stroke();
+                });
+            }
+
+            function screenToWorld(clientX, clientY) {
+                const rect = canvas.getBoundingClientRect();
+                const px = (clientX - rect.left) * (canvas.width / rect.width);
+                const py = (clientY - rect.top) * (canvas.height / rect.height);
+                const cx = canvas.width / 2, cy = canvas.height / 2;
+                return { x: px - cx, y: cy - py };
+            }
+
+            // ---------- Geometry helpers ----------
+            function dist2(a, b) { const dx = a.x - b.x, dy = a.y - b.y; return dx * dx + dy * dy; }
+            function distance(a, b) { return Math.sqrt(dist2(a, b)); }
+
+            function drawPolygon(points) {
+                if (!points || points.length < 2) return;
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            function closestPointOnSegment(p, a, b) {
+                const abx = b.x - a.x, aby = b.y - a.y;
+                const apx = p.x - a.x, apy = p.y - a.y;
+                const ab2 = abx * abx + aby * aby;
+                const t = ab2 === 0 ? 0 : Math.max(0, Math.min(1, (apx * abx + apy * aby) / ab2));
+                return { x: a.x + abx * t, y: a.y + aby * t, t };
+            }
+
+            function findNearestVertexIndex(points, p, threshold) {
+                let bestIdx = -1;
+                let bestD = Infinity;
+                for (let i = 0; i < points.length; i++) {
+                    const d = distance(p, points[i]);
+                    if (d < bestD) { bestD = d; bestIdx = i; }
+                }
+                return bestD <= threshold ? bestIdx : -1;
+            }
+
+            function findNearestEdge(points, p) {
+                let best = { segIndex: 0, point: null, d: Infinity };
+                for (let i = 0; i < points.length; i++) {
+                    const j = (i + 1) % points.length;
+                    const c = closestPointOnSegment(p, points[i], points[j]);
+                    const d = distance(p, c);
+                    if (d < best.d) best = { segIndex: i, point: c, d };
+                }
+                return best;
+            }
+
+            // Отражение точки P относительно прямой AB через проекцию. [web:119]
+            function reflectPointAcrossLine(p, a, b) {
+                const vx = b.x - a.x;
+                const vy = b.y - a.y;
+                const len2 = vx * vx + vy * vy;
+                if (len2 === 0) return { x: p.x, y: p.y };
+
+                const wx = p.x - a.x;
+                const wy = p.y - a.y;
+
+                const t = (wx * vx + wy * vy) / len2;     // параметр проекции
+                const projX = a.x + t * vx;
+                const projY = a.y + t * vy;
+
+                return { x: 2 * projX - p.x, y: 2 * projY - p.y };
+            }
+
+            // ---------- Drawing ----------
+            function drawLineInfinite(a, b) {
+                withWorldTransform(() => {
+                    // линия
+                    ctx.strokeStyle = "#e53e3e";
+                    ctx.lineWidth = 1.5;
+
+                    const vx = b.x - a.x;
+                    const vy = b.y - a.y;
+                    const len = Math.sqrt(vx * vx + vy * vy) || 1;
+                    const ux = vx / len;
+                    const uy = vy / len;
+
+                    const K = 2000;
+                    const p1 = { x: a.x - ux * K, y: a.y - uy * K };
+                    const p2 = { x: a.x + ux * K, y: a.y + uy * K };
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+
+                    // ручки
+                    ctx.fillStyle = "#e53e3e";
+                    [a, b].forEach(pt => {
+                        ctx.beginPath();
+                        ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                });
+            }
+
+            function drawPolygonWorld(points, fill, stroke, drawVertices, vertexColor) {
+                withWorldTransform(() => {
+                    ctx.fillStyle = fill;
+                    ctx.strokeStyle = stroke;
+                    ctx.lineWidth = 2;
+                    drawPolygon(points);
+
+                    if (drawVertices) {
+                        ctx.fillStyle = vertexColor;
+                        for (const pt of points) {
+                            ctx.beginPath();
+                            ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                });
+            }
+
+            function render() {
+                clearCanvas();
+                drawAxes();
+
+                drawLineInfinite(lineA, lineB);
+
+                if (showOriginalEl.checked) {
+                    drawPolygonWorld(polygon, "rgba(102, 126, 234, 0.25)", "#667eea", true, "#667eea");
+                }
+
+                if (showReflectionEl.checked) {
+                    const reflected = polygon.map(p => reflectPointAcrossLine(p, lineA, lineB));
+                    drawPolygonWorld(reflected, "rgba(72, 187, 120, 0.20)", "#48bb78", false, "#48bb78");
+                }
+            }
+
+            // ---------- Interaction ----------
+            const INSERT_THR = 30;
+            const VERTEX_THR = 10;
+            const HANDLE_THR = 14;
+
+            const DragKind = { NONE: 0, POLY_VERTEX: 1, LINE_A: 2, LINE_B: 3 };
+            const drag = { kind: DragKind.NONE, index: -1, lastWorld: null, raf: false };
+
+            function insertVertexOnNearestEdge(worldPoint) {
+                if (polygon.length < 2) return;
+                const e = findNearestEdge(polygon, worldPoint);
+                if (e.d > INSERT_THR) return;
+                polygon.splice(e.segIndex + 1, 0, { x: e.point.x, y: e.point.y });
+            }
+
+            // dblclick — добавление точки [web:49]
+            canvas.addEventListener("dblclick", (evt) => {
+                const p = screenToWorld(evt.clientX, evt.clientY);
+                insertVertexOnNearestEdge(p);
+                render();
+            });
+
+            // drag через mousemove [web:63]
+            canvas.addEventListener("mousedown", (evt) => {
+                const p = screenToWorld(evt.clientX, evt.clientY);
+
+                // приоритет: ручки прямой
+                if (distance(p, lineA) <= HANDLE_THR) {
+                    drag.kind = DragKind.LINE_A;
+                    drag.lastWorld = p;
+                    evt.preventDefault();
+                    return;
+                }
+                if (distance(p, lineB) <= HANDLE_THR) {
+                    drag.kind = DragKind.LINE_B;
+                    drag.lastWorld = p;
+                    evt.preventDefault();
+                    return;
+                }
+
+                // затем вершины полигона
+                const idx = findNearestVertexIndex(polygon, p, VERTEX_THR);
+                if (idx !== -1) {
+                    drag.kind = DragKind.POLY_VERTEX;
+                    drag.index = idx;
+                    drag.lastWorld = p;
+                    evt.preventDefault();
+                }
+            });
+
+            function applyDrag() {
+                drag.raf = false;
+                if (!drag.lastWorld || drag.kind === DragKind.NONE) return;
+
+                if (drag.kind === DragKind.LINE_A) lineA = { ...drag.lastWorld };
+                if (drag.kind === DragKind.LINE_B) lineB = { ...drag.lastWorld };
+                if (drag.kind === DragKind.POLY_VERTEX && drag.index >= 0) polygon[drag.index] = { ...drag.lastWorld };
+
+                render();
+            }
+
+            canvas.addEventListener("mousemove", (evt) => {
+                if (drag.kind === DragKind.NONE) return;
+                drag.lastWorld = screenToWorld(evt.clientX, evt.clientY);
+
+                if (!drag.raf) {
+                    drag.raf = true;
+                    requestAnimationFrame(applyDrag);
+                }
+            });
+
+            function stopDrag() {
+                drag.kind = DragKind.NONE;
+                drag.index = -1;
+                drag.lastWorld = null;
+            }
+
+            window.addEventListener("mouseup", stopDrag);
+            canvas.addEventListener("mouseleave", stopDrag);
+
+            // ---------- Controls ----------
+            showOriginalEl.addEventListener("change", render);
+            showReflectionEl.addEventListener("change", render);
+
+            resetBtn.addEventListener("click", () => {
+                polygon = [
+                    { x: 80, y: 60 },
+                    { x: 170, y: 60 },
+                    { x: 150, y: 140 },
+                    { x: 60, y: 120 }
+                ];
+                lineA = { x: -150, y: -50 };
+                lineB = { x: 200, y: 100 };
+
+                showOriginalEl.checked = true;
+                showReflectionEl.checked = true;
+
+                render();
+            });
+
+            // старт
+            render();
+        });
+    </script>
+
+</body>
+
+</html>

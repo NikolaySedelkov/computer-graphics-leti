@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа по компьютерной графике</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .navigation {
+            background: #2d3748;
+            padding: 15px 30px;
+            border-bottom: 3px solid #1a202c;
+        }
+
+        .nav-btn {
+            min-width: 80px;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #fff;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+        }
+
+        .lab-info {
+            background: #f7fafc;
+            padding: 20px 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .canvas-wrapper {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            background: white;
+            border: 1px solid #a0aec0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls-panel {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 25px;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .controls-panel h3 {
+            color: #2d3748;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #cbd5e0;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Заголовок курса -->
+        <div class="header">
+            <h1 class="mb-2">Лабораторная работа 1</h1>
+            <h2 class="h4 fw-light opacity-75">Отображение плоского объекта относительно осей координат с изменением или
+                без изменения масштаба изображения.</h2>
+        </div>
+
+        <!-- Рабочая область -->
+        <div class="row g-3 p-4">
+            <!-- Область Canvas -->
+            <div class="col-lg-8">
+                <div class="canvas-wrapper">
+                    <canvas id="canvas" width="800" height="600"></canvas>
+                </div>
+            </div>
+
+            <!-- Панель управления -->
+            <div class="col-lg-4">
+                <div class="controls-panel">
+                    <h3 class="h5 mb-3">Контроллеры</h3>
+
+                    <div id="controls">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="t1ShowOriginal" checked>
+                                <label class="form-check-label" for="t1ShowOriginal">Показать оригинал</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="t1MirrorX" checked>
+                                <label class="form-check-label" for="t1MirrorX">Отражение относительно OX</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="t1MirrorY" checked>
+                                <label class="form-check-label" for="t1MirrorY">Отражение относительно OY</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="t1MirrorO">
+                                <label class="form-check-label" for="t1MirrorO">Отражение относительно начала
+                                    (O)</label>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label" for="t1Sx">Масштаб Sx</label>
+                                <input class="form-control" type="number" id="t1Sx" value="1" step="0.1" min="0.1"
+                                    max="5">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="t1Sy">Масштаб Sy</label>
+                                <input class="form-control" type="number" id="t1Sy" value="1" step="0.1" min="0.1"
+                                    max="5">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-secondary" id="t1Reset">Сброс</button>
+                        </div>
+
+                        <hr class="my-3">
+                        <div class="small text-secondary">
+                            Подсказка: объект расположен в I квадранте, поэтому отражения будут видны в остальных.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        // ---- Controls helpers
+        const el = (id) => document.getElementById(id);
+        function clamp(v, min, max) { return Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : 1; }
+
+        // ---- Task 1 polygon (original)
+        let shape = [
+            { x: 80, y: 60 },
+            { x: 170, y: 60 },
+            { x: 150, y: 140 },
+            { x: 60, y: 120 }
+        ];
+
+        function readState() {
+            return {
+                showOriginal: el("t1ShowOriginal").checked,
+                mirrorX: el("t1MirrorX").checked,
+                mirrorY: el("t1MirrorY").checked,
+                mirrorO: el("t1MirrorO").checked,
+                sx: clamp(parseFloat(el("t1Sx").value), 0.1, 5),
+                sy: clamp(parseFloat(el("t1Sy").value), 0.1, 5)
+            };
+        }
+
+        // ---- Coordinate system
+        function clearCanvas() {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawAxes() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.save();
+            ctx.setTransform(1, 0, 0, -1, cx, cy);
+
+            ctx.strokeStyle = "#cbd5e0";
+            ctx.lineWidth = 1;
+
+            // OX
+            ctx.beginPath();
+            ctx.moveTo(-cx, 0);
+            ctx.lineTo(cx, 0);
+            ctx.stroke();
+
+            // OY
+            ctx.beginPath();
+            ctx.moveTo(0, -cy);
+            ctx.lineTo(0, cy);
+            ctx.stroke();
+
+            // ticks
+            const tick = 6, step = 50;
+            ctx.strokeStyle = "#e2e8f0";
+            ctx.beginPath();
+            for (let x = -cx; x <= cx; x += step) { ctx.moveTo(x, -tick); ctx.lineTo(x, tick); }
+            for (let y = -cy; y <= cy; y += step) { ctx.moveTo(-tick, y); ctx.lineTo(tick, y); }
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function screenToWorld(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const px = (clientX - rect.left) * (canvas.width / rect.width);
+            const py = (clientY - rect.top) * (canvas.height / rect.height);
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+            return { x: px - cx, y: cy - py };
+        }
+
+        // ---- Geometry
+        function drawPolygon(points) {
+            if (!points || points.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function dist2(a, b) { const dx = a.x - b.x, dy = a.y - b.y; return dx * dx + dy * dy; }
+        function distance(a, b) { return Math.sqrt(dist2(a, b)); }
+
+        function closestPointOnSegment(p, a, b) {
+            const abx = b.x - a.x, aby = b.y - a.y;
+            const apx = p.x - a.x, apy = p.y - a.y;
+            const ab2 = abx * abx + aby * aby;
+            const t = ab2 === 0 ? 0 : Math.max(0, Math.min(1, (apx * abx + apy * aby) / ab2));
+            return { x: a.x + abx * t, y: a.y + aby * t, t };
+        }
+
+        function findNearestVertexIndex(p, threshold = 10) {
+            let bestIdx = -1;
+            let bestD = Infinity;
+            for (let i = 0; i < shape.length; i++) {
+                const d = distance(p, shape[i]);
+                if (d < bestD) { bestD = d; bestIdx = i; }
+            }
+            return bestD <= threshold ? bestIdx : -1;
+        }
+
+        function findNearestEdge(p) {
+            let best = { segIndex: 0, point: null, d: Infinity };
+            for (let i = 0; i < shape.length; i++) {
+                const j = (i + 1) % shape.length;
+                const c = closestPointOnSegment(p, shape[i], shape[j]);
+                const d = distance(p, c);
+                if (d < best.d) best = { segIndex: i, point: c, d };
+            }
+            return best;
+        }
+
+        // Центроид по площади (shoelace), fallback на среднее координат. [web:79][web:104]
+        function polygonCentroid(points) {
+            if (!points || points.length === 0) return { x: 0, y: 0 };
+            if (points.length < 3) {
+                const s = points.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+                return { x: s.x / points.length, y: s.y / points.length };
+            }
+
+            let a2 = 0;   // 2*Area
+            let cx6 = 0;  // 6*A*Cx
+            let cy6 = 0;  // 6*A*Cy
+
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const q = points[(i + 1) % points.length];
+                const cross = p.x * q.y - q.x * p.y;
+                a2 += cross;
+                cx6 += (p.x + q.x) * cross;
+                cy6 += (p.y + q.y) * cross;
+            }
+
+            if (Math.abs(a2) < 1e-9) {
+                const s = points.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+                return { x: s.x / points.length, y: s.y / points.length };
+            }
+
+            const area = a2 / 2;
+            return { x: cx6 / (6 * area), y: cy6 / (6 * area) };
+        }
+
+        // Строим отражённый и масштабированный относительно центроида многоугольник в координатах мира.
+        // p -> pRef = (signX * p.x, signY * p.y)
+        // c  -> cRef = (signX * c.x, signY * c.y)
+        // p' = cRef + S * (pRef - cRef)
+        function buildMirrorScaledPointsAboutCentroid(points, state, signX, signY) {
+            const c = polygonCentroid(points);
+            const cRef = { x: signX * c.x, y: signY * c.y };
+
+            return points.map((p) => {
+                const pRef = { x: signX * p.x, y: signY * p.y };
+                return {
+                    x: cRef.x + state.sx * (pRef.x - cRef.x),
+                    y: cRef.y + state.sy * (pRef.y - cRef.y)
+                };
+            });
+        }
+
+        function drawPolygonInWorld(points, fill, stroke) {
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+
+            ctx.save();
+            ctx.setTransform(1, 0, 0, -1, cx, cy);
+
+            ctx.fillStyle = fill;
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = 2;
+
+            drawPolygon(points);
+
+            ctx.restore();
+        }
+
+        // ---- Drawing
+        function drawOriginal() {
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+
+            ctx.save();
+            ctx.setTransform(1, 0, 0, -1, cx, cy);
+
+            ctx.fillStyle = "rgba(102, 126, 234, 0.25)";
+            ctx.strokeStyle = "#667eea";
+            ctx.lineWidth = 2;
+            drawPolygon(shape);
+
+            // вершины для drag
+            ctx.fillStyle = "#667eea";
+            for (const pt of shape) {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function renderTask1() {
+            const state = readState();
+
+            clearCanvas();
+            drawAxes();
+
+            if (state.showOriginal) drawOriginal();
+
+            if (state.mirrorX) {
+                const pts = buildMirrorScaledPointsAboutCentroid(shape, state, 1, -1);
+                drawPolygonInWorld(pts, "rgba(72, 187, 120, 0.20)", "#48bb78");
+            }
+            if (state.mirrorY) {
+                const pts = buildMirrorScaledPointsAboutCentroid(shape, state, -1, 1);
+                drawPolygonInWorld(pts, "rgba(237, 137, 54, 0.20)", "#ed8936");
+            }
+            if (state.mirrorO) {
+                const pts = buildMirrorScaledPointsAboutCentroid(shape, state, -1, -1);
+                drawPolygonInWorld(pts, "rgba(229, 62, 62, 0.18)", "#e53e3e");
+            }
+        }
+
+        // ---- Interaction: dblclick add; drag vertices
+        const INSERT_THR = 30;
+        const VERTEX_THR = 10;
+
+        let drag = {
+            active: false,
+            vertexIndex: -1,
+            rafPending: false,
+            lastWorld: null
+        };
+
+        function insertPointToNearestEdge(worldPoint) {
+            if (shape.length < 2) return;
+
+            const e = findNearestEdge(worldPoint);
+            if (e.d > INSERT_THR) return;
+
+            shape.splice(e.segIndex + 1, 0, { x: e.point.x, y: e.point.y });
+        }
+
+        function onCanvasDblClick(evt) {
+            const p = screenToWorld(evt.clientX, evt.clientY);
+            insertPointToNearestEdge(p);
+            renderTask1();
+        }
+
+        function onCanvasMouseDown(evt) {
+            const p = screenToWorld(evt.clientX, evt.clientY);
+
+            const idx = findNearestVertexIndex(p, VERTEX_THR);
+            if (idx === -1) return;
+
+            drag.active = true;
+            drag.vertexIndex = idx;
+            drag.lastWorld = p;
+
+            evt.preventDefault();
+        }
+
+        function scheduleDragRender() {
+            if (drag.rafPending) return;
+            drag.rafPending = true;
+
+            requestAnimationFrame(() => {
+                drag.rafPending = false;
+                if (!drag.active || drag.vertexIndex < 0 || !drag.lastWorld) return;
+
+                shape[drag.vertexIndex] = { x: drag.lastWorld.x, y: drag.lastWorld.y };
+                renderTask1();
+            });
+        }
+
+        function onCanvasMouseMove(evt) {
+            if (!drag.active) return;
+            drag.lastWorld = screenToWorld(evt.clientX, evt.clientY);
+            scheduleDragRender();
+        }
+
+        function stopDrag() {
+            drag.active = false;
+            drag.vertexIndex = -1;
+            drag.lastWorld = null;
+        }
+
+        function onCanvasMouseUp() { stopDrag(); }
+        function onCanvasMouseLeave() { stopDrag(); }
+
+        // ---- Bind controls
+        function bindControlsTask1() {
+            ["t1ShowOriginal", "t1MirrorX", "t1MirrorY", "t1MirrorO", "t1Sx", "t1Sy"].forEach((id) => {
+                el(id).addEventListener("input", renderTask1);
+                el(id).addEventListener("change", renderTask1);
+            });
+
+            el("t1Reset").addEventListener("click", () => {
+                el("t1ShowOriginal").checked = true;
+                el("t1MirrorX").checked = true;
+                el("t1MirrorY").checked = true;
+                el("t1MirrorO").checked = false;
+                el("t1Sx").value = "1";
+                el("t1Sy").value = "1";
+                renderTask1();
+            });
+
+            canvas.addEventListener("dblclick", onCanvasDblClick);
+            canvas.addEventListener("mousedown", onCanvasMouseDown);
+            canvas.addEventListener("mousemove", onCanvasMouseMove);
+            window.addEventListener("mouseup", onCanvasMouseUp);
+            canvas.addEventListener("mouseleave", onCanvasMouseLeave);
+        }
+
+        function init() {
+            bindControlsTask1();
+            renderTask1();
+        }
+
+        init();
+    </script>
+
+</body>
+
+</html>
