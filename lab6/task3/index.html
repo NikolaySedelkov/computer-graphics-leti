@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лабораторная работа по компьютерной графике</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .canvas-wrapper {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #canvas {
+      background: white;
+      border: 1px solid #a0aec0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls-panel {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 25px;
+      overflow-y: auto;
+      max-height: 700px;
+    }
+
+    .controls-panel h3 {
+      color: #2d3748;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #cbd5e0;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .legend-color {
+      width: 30px;
+      height: 20px;
+      border: 1px solid #333;
+    }
+
+    .legend-line {
+      width: 30px;
+      height: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Заголовок курса -->
+    <div class="header">
+      <h1 class="mb-2">Лабораторная работа 5</h1>
+      <h2 class="h4 fw-light opacity-75">Алгоритмы выявления видимых граней и рёбер выпуклого объёмного тела</h2>
+    </div>
+
+    <!-- Рабочая область -->
+    <div class="row g-3 p-4">
+      <!-- Область Canvas -->
+      <div class="col-lg-8">
+        <div class="canvas-wrapper">
+          <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+
+      <!-- Панель управления -->
+      <div class="col-lg-4">
+        <div class="controls-panel">
+          <h3 class="h5 mb-3">Контроллеры</h3>
+
+          <div id="controls">
+            <div class="mb-3">
+              <div class="fw-semibold mb-2">Объёмное тело</div>
+              <select class="form-select" id="objectType">
+                <option value="sphere" selected>Шар</option>
+                <option value="cylinder">Цилиндр</option>
+                <option value="pyramid">Пирамида</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-2">Фактура (процедурная)</div>
+              <select class="form-select" id="texType">
+                <option value="checker" selected>Шахматка</option>
+                <option value="stripes">Полосы</option>
+                <option value="wood">Дерево</option>
+                <option value="marble">Мрамор</option>
+              </select>
+
+              <div class="mt-2">
+                <label class="form-label">Масштаб (тайлинг): <span id="texScaleValue">8</span></label>
+                <input type="range" class="form-range" id="texScale" min="1" max="30" step="1" value="8">
+              </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-2">Поворот объекта</div>
+
+              <div class="mt-2">
+                <label class="form-label">Поворот X: <span id="rotXValue">-20</span>°</label>
+                <input type="range" class="form-range" id="rotX" min="-89" max="89" step="1" value="-20">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label">Поворот Y: <span id="rotYValue">30</span>°</label>
+                <input type="range" class="form-range" id="rotY" min="-180" max="180" step="1" value="30">
+              </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-2">Камера и качество</div>
+
+              <div class="mt-2">
+                <label class="form-label">Дистанция камеры: <span id="cameraDistanceValue">10.0</span></label>
+                <input type="range" class="form-range" id="cameraDistance" min="5" max="20" step="0.5" value="10">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label">Детализация: <span id="resolutionValue">35</span></label>
+                <input type="range" class="form-range" id="resolution" min="10" max="70" step="5" value="35">
+              </div>
+
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="showWireframe">
+                <label class="form-check-label" for="showWireframe">Показывать сетку</label>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-secondary" id="resetAll">Сброс</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d", { alpha: false });
+
+    const el = (id) => document.getElementById(id);
+    const toRad = (deg) => deg * Math.PI / 180;
+    const fract = (x) => x - Math.floor(x);
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    const BG = "#1a1a2e";
+    const focal = 300;
+    const cameraHeight = 0.25;
+
+    class Vec3 {
+      constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; }
+      add(v) { return new Vec3(this.x + v.x, this.y + v.y, this.z + v.z); }
+      subtract(v) { return new Vec3(this.x - v.x, this.y - v.y, this.z - v.z); }
+      multiply(s) { return new Vec3(this.x * s, this.y * s, this.z * s); }
+      dot(v) { return this.x * v.x + this.y * v.y + this.z * v.z; }
+      cross(v) {
+        return new Vec3(
+          this.y * v.z - this.z * v.y,
+          this.z * v.x - this.x * v.z,
+          this.x * v.y - this.y * v.x
+        );
+      }
+      length() { return Math.hypot(this.x, this.y, this.z); }
+      normalize() {
+        const L = this.length();
+        if (L === 0) return new Vec3(0, 0, 1);
+        return new Vec3(this.x / L, this.y / L, this.z / L);
+      }
+    }
+
+    function rotateX(p, a) {
+      const c = Math.cos(a), s = Math.sin(a);
+      return new Vec3(p.x, p.y * c - p.z * s, p.y * s + p.z * c);
+    }
+    function rotateY(p, a) {
+      const c = Math.cos(a), s = Math.sin(a);
+      return new Vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
+    }
+    function rotateXY(p, ax, ay) { return rotateY(rotateX(p, ax), ay); }
+
+    function projectPerspective(p, cameraDistance) {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      const zCam = cameraDistance - p.z;
+      if (zCam <= 0.1) return null;
+
+      const k = focal / zCam;
+      return {
+        x: cx + p.x * k,
+        y: cy - (p.y - cameraHeight) * k,
+        zCam
+      };
+    }
+
+    // ============================================================================
+    // Процедурные текстуры (albedo only)
+    // ============================================================================
+    function hash2(x, y) {
+      const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+      return fract(s);
+    }
+
+    function valueNoise2(x, y) {
+      const xi = Math.floor(x), yi = Math.floor(y);
+      const xf = x - xi, yf = y - yi;
+
+      const a = hash2(xi, yi);
+      const b = hash2(xi + 1, yi);
+      const c = hash2(xi, yi + 1);
+      const d = hash2(xi + 1, yi + 1);
+
+      const u = xf * xf * (3 - 2 * xf);
+      const v = yf * yf * (3 - 2 * yf);
+
+      return lerp(lerp(a, b, u), lerp(c, d, u), v);
+    }
+
+    function fbm(x, y) {
+      let sum = 0;
+      let amp = 0.5;
+      let freq = 1.0;
+      for (let i = 0; i < 5; i++) {
+        sum += amp * valueNoise2(x * freq, y * freq);
+        freq *= 2.0;
+        amp *= 0.5;
+      }
+      return sum;
+    }
+
+    function sampleTexture(uv, texType, scale) {
+      const u = fract(uv.u * scale);
+      const v = fract(uv.v * scale);
+
+      if (texType === "checker") {
+        const cx = (u < 0.5) ? 0 : 1;
+        const cy = (v < 0.5) ? 0 : 1;
+        const m = (cx ^ cy) ? 1 : 0;
+
+        const c0 = { r: 0.10, g: 0.10, b: 0.12 };
+        const c1 = { r: 0.85, g: 0.85, b: 0.90 };
+        return m ? c1 : c0;
+      }
+
+      if (texType === "stripes") {
+        const s = 0.5 + 0.5 * Math.sin((u * 2 * Math.PI) * 6);
+        const cA = { r: 0.15, g: 0.55, b: 0.85 };
+        const cB = { r: 0.95, g: 0.80, b: 0.20 };
+        return { r: lerp(cA.r, cB.r, s), g: lerp(cA.g, cB.g, s), b: lerp(cA.b, cB.b, s) };
+      }
+
+      if (texType === "wood") {
+        const nx = (uv.u - 0.5) * scale;
+        const ny = (uv.v - 0.5) * scale;
+        const n = fbm(nx * 2.2, ny * 2.2);
+        const rings = fract((Math.hypot(nx, ny) + 0.35 * n) * 3.0);
+        const t = 0.25 + 0.75 * rings;
+
+        const dark = { r: 0.25, g: 0.12, b: 0.05 };
+        const light = { r: 0.60, g: 0.36, b: 0.18 };
+        return { r: lerp(dark.r, light.r, t), g: lerp(dark.g, light.g, t), b: lerp(dark.b, light.b, t) };
+      }
+
+      // marble
+      const n = fbm(uv.u * scale * 2.0, uv.v * scale * 2.0);
+      const m = 0.5 + 0.5 * Math.sin((uv.u * scale * 2.0 + 1.7 * n) * 2 * Math.PI);
+      const base = { r: 0.90, g: 0.90, b: 0.92 };
+      const vein = { r: 0.25, g: 0.25, b: 0.30 };
+      const t = m * m;
+      return { r: lerp(vein.r, base.r, t), g: lerp(vein.g, base.g, t), b: lerp(vein.b, base.b, t) };
+    }
+
+    // ============================================================================
+    // Геометрия (шар / цилиндр / пирамида) как сетка квадов
+    // ============================================================================
+    function sphereSurface(u, v) {
+      // u: 0..1 (theta 0..pi), v: 0..1 (phi 0..2pi)
+      const theta = u * Math.PI;
+      const phi = v * 2 * Math.PI;
+      const r = 1.7;
+      return new Vec3(
+        r * Math.sin(theta) * Math.cos(phi),
+        r * Math.cos(theta),
+        r * Math.sin(theta) * Math.sin(phi)
+      );
+    }
+
+    function cylinderSurface(u, v) {
+      const phi = u * 2 * Math.PI;
+      const r = 1.3;
+      const h = 2.4;
+      const y = (v - 0.5) * h;
+      return new Vec3(r * Math.cos(phi), y, r * Math.sin(phi));
+    }
+
+    function pyramidPatch(face, u, v) {
+      const s = 1.6;
+      const h = 2.6;
+      const yBase = -h / 2;
+      const apex = new Vec3(0, h / 2, 0);
+
+      const A = new Vec3(-s, yBase, -s);
+      const B = new Vec3(s, yBase, -s);
+      const C = new Vec3(s, yBase, s);
+      const D = new Vec3(-s, yBase, s);
+
+      if (face === 0) { // AB
+        const p0 = new Vec3(lerp(A.x, B.x, u), yBase, lerp(A.z, B.z, u));
+        return new Vec3(lerp(p0.x, apex.x, v), lerp(p0.y, apex.y, v), lerp(p0.z, apex.z, v));
+      }
+      if (face === 1) { // BC
+        const p0 = new Vec3(lerp(B.x, C.x, u), yBase, lerp(B.z, C.z, u));
+        return new Vec3(lerp(p0.x, apex.x, v), lerp(p0.y, apex.y, v), lerp(p0.z, apex.z, v));
+      }
+      if (face === 2) { // CD
+        const p0 = new Vec3(lerp(C.x, D.x, u), yBase, lerp(C.z, D.z, u));
+        return new Vec3(lerp(p0.x, apex.x, v), lerp(p0.y, apex.y, v), lerp(p0.z, apex.z, v));
+      }
+      if (face === 3) { // DA
+        const p0 = new Vec3(lerp(D.x, A.x, u), yBase, lerp(D.z, A.z, u));
+        return new Vec3(lerp(p0.x, apex.x, v), lerp(p0.y, apex.y, v), lerp(p0.z, apex.z, v));
+      }
+
+      // base: (u,v) по XZ
+      return new Vec3(lerp(A.x, C.x, u), yBase, lerp(A.z, C.z, v));
+    }
+
+    function buildPatches(state) {
+      const res = state.resolution;
+      const du = 1 / res;
+      const dv = 1 / res;
+
+      const patches = [];
+      const cam = state.camera;
+
+      function pushQuad(p00, p10, p11, p01, uvCenter) {
+        // rotation in world
+        const rp00 = rotateXY(p00, state.rotX, state.rotY);
+        const rp10 = rotateXY(p10, state.rotX, state.rotY);
+        const rp11 = rotateXY(p11, state.rotX, state.rotY);
+        const rp01 = rotateXY(p01, state.rotX, state.rotY);
+
+        // center + normal for culling/sorting
+        const center = new Vec3(
+          (rp00.x + rp10.x + rp11.x + rp01.x) / 4,
+          (rp00.y + rp10.y + rp11.y + rp01.y) / 4,
+          (rp00.z + rp10.z + rp11.z + rp01.z) / 4
+        );
+
+        const e1 = rp10.subtract(rp00);
+        const e2 = rp01.subtract(rp00);
+        const N = e1.cross(e2).normalize();
+
+        // backface cull (без света всё равно полезно для аккуратности)
+        const viewDir = cam.subtract(center);
+        if (N.dot(viewDir) <= 0) return;
+
+        const depth = cam.subtract(center).length();
+        patches.push({ pts3: [rp00, rp10, rp11, rp01], uv: uvCenter, depth });
+      }
+
+      if (state.objectType === "sphere") {
+        for (let i = 0; i < res; i++) {
+          for (let j = 0; j < res; j++) {
+            const u0 = i * du, v0 = j * dv;
+            const u1 = (i + 1) * du, v1 = (j + 1) * dv;
+            const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
+
+            const p00 = sphereSurface(u0, v0);
+            const p10 = sphereSurface(u1, v0);
+            const p11 = sphereSurface(u1, v1);
+            const p01 = sphereSurface(u0, v1);
+
+            // UV для шара можно получать и через atan2/asin, но тут uv = параметры (u,v) сетки. [web:93]
+            pushQuad(p00, p10, p11, p01, { u: vc, v: uc });
+          }
+        }
+        return patches;
+      }
+
+      if (state.objectType === "cylinder") {
+        for (let i = 0; i < res; i++) {
+          for (let j = 0; j < res; j++) {
+            const u0 = i * du, v0 = j * dv;
+            const u1 = (i + 1) * du, v1 = (j + 1) * dv;
+            const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
+
+            const p00 = cylinderSurface(u0, v0);
+            const p10 = cylinderSurface(u1, v0);
+            const p11 = cylinderSurface(u1, v1);
+            const p01 = cylinderSurface(u0, v1);
+
+            pushQuad(p00, p10, p11, p01, { u: uc, v: vc });
+          }
+        }
+        return patches;
+      }
+
+      // pyramid: 4 side faces + base
+      for (let face = 0; face < 5; face++) {
+        for (let i = 0; i < res; i++) {
+          for (let j = 0; j < res; j++) {
+            const u0 = i * du, v0 = j * dv;
+            const u1 = (i + 1) * du, v1 = (j + 1) * dv;
+            const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
+
+            const p00 = pyramidPatch(face, u0, v0);
+            const p10 = pyramidPatch(face, u1, v0);
+            const p11 = pyramidPatch(face, u1, v1);
+            const p01 = pyramidPatch(face, u0, v1);
+
+            pushQuad(p00, p10, p11, p01, { u: uc, v: vc });
+          }
+        }
+      }
+      return patches;
+    }
+
+    // ============================================================================
+    // UI + Render
+    // ============================================================================
+    function readState() {
+      const rotXDeg = parseFloat(el("rotX").value);
+      const rotYDeg = parseFloat(el("rotY").value);
+
+      const cameraDistance = parseFloat(el("cameraDistance").value);
+      const camera = new Vec3(0, 0, cameraDistance);
+
+      return {
+        objectType: el("objectType").value,
+        texType: el("texType").value,
+        texScale: parseFloat(el("texScale").value),
+
+        rotXDeg, rotYDeg,
+        rotX: toRad(rotXDeg),
+        rotY: toRad(rotYDeg),
+
+        cameraDistance,
+        camera,
+
+        resolution: parseInt(el("resolution").value, 10),
+        showWireframe: el("showWireframe").checked
+      };
+    }
+
+    function syncLabels(st) {
+      el("rotXValue").textContent = String(Math.round(st.rotXDeg));
+      el("rotYValue").textContent = String(Math.round(st.rotYDeg));
+      el("texScaleValue").textContent = String(Math.round(st.texScale));
+      el("cameraDistanceValue").textContent = st.cameraDistance.toFixed(1);
+      el("resolutionValue").textContent = String(st.resolution);
+    }
+
+    function render() {
+      ctx.fillStyle = BG;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const st = readState();
+      syncLabels(st);
+
+      const patches = buildPatches(st);
+      patches.sort((a, b) => b.depth - a.depth); // painter
+
+      ctx.lineWidth = 0.6;
+
+      for (const p of patches) {
+        const pts2 = p.pts3.map(q => projectPerspective(q, st.cameraDistance));
+        if (pts2.some(x => !x)) continue;
+
+        const tex = sampleTexture(p.uv, st.texType, st.texScale);
+        const r = (tex.r * 255) | 0;
+        const g = (tex.g * 255) | 0;
+        const b = (tex.b * 255) | 0;
+
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.strokeStyle = "rgba(0,0,0,0.22)";
+
+        ctx.beginPath();
+        ctx.moveTo(pts2[0].x, pts2[0].y);
+        ctx.lineTo(pts2[1].x, pts2[1].y);
+        ctx.lineTo(pts2[2].x, pts2[2].y);
+        ctx.lineTo(pts2[3].x, pts2[3].y);
+        ctx.closePath();
+        ctx.fill();
+        if (st.showWireframe) ctx.stroke();
+      }
+    }
+
+    const defaults = {
+      objectType: "sphere",
+      texType: "checker",
+      texScale: 8,
+      rotX: -20,
+      rotY: 30,
+      cameraDistance: 10,
+      resolution: 35,
+      showWireframe: false
+    };
+
+    function resetAll() {
+      el("objectType").value = defaults.objectType;
+      el("texType").value = defaults.texType;
+      el("texScale").value = String(defaults.texScale);
+
+      el("rotX").value = String(defaults.rotX);
+      el("rotY").value = String(defaults.rotY);
+
+      el("cameraDistance").value = String(defaults.cameraDistance);
+      el("resolution").value = String(defaults.resolution);
+      el("showWireframe").checked = defaults.showWireframe;
+
+      render();
+    }
+
+    function bind() {
+      const ids = [
+        "objectType", "texType", "texScale",
+        "rotX", "rotY",
+        "cameraDistance", "resolution",
+        "showWireframe"
+      ];
+
+      ids.forEach(id => {
+        const n = el(id);
+        n.addEventListener("input", render);
+        n.addEventListener("change", render);
+      });
+
+      el("resetAll").addEventListener("click", resetAll);
+    }
+
+    bind();
+    render();
+  </script>
+
+
+
+</body>
+
+</html>

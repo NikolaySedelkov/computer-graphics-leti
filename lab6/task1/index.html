@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа по компьютерной графике</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .canvas-wrapper {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            background: #1a1a2e;
+            border: 1px solid #a0aec0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: grab;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        .controls-panel {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 25px;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .controls-panel h3 {
+            color: #2d3748;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #cbd5e0;
+            margin-bottom: 15px;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .stats-display {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Заголовок курса -->
+        <div class="header">
+            <h1 class="mb-2">Лабораторная работа 6</h1>
+            <h2 class="h4 fw-light opacity-75">Сформировать для наблюдателя изображение освещенных многоугольников или
+                поверхностей, сформированных при выполнении темы 5 без
+                выявления теней. Известными параметрами являются цвет каждого многогранника, интенсивность излучения
+                точечного источника, его положение и
+                положение наблюдателя в пространстве. Обеспечить поворот окрашенной
+                поверхности вокруг осей X и Y или изменение координат источников освещения и наблюдателя.</h2>
+        </div>
+
+        <!-- Рабочая область -->
+        <div class="row g-3 p-4">
+            <!-- Область Canvas -->
+            <div class="col-lg-8">
+                <div class="canvas-wrapper position-relative">
+                    <canvas id="canvas" width="800" height="600"></canvas>
+                </div>
+            </div>
+
+            <!-- Панель управления -->
+            <div class="col-lg-4">
+                <div class="controls-panel">
+                    <h3 class="h5">Контроллеры</h3>
+
+                    <div id="controls">
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Поверхность</div>
+                            <select class="form-select" id="surfaceType">
+                                <option value="bezier" selected>Поверхность Безье</option>
+                                <option value="bilinear">Билинейная поверхность</option>
+                                <option value="sphere">Сфера</option>
+                                <option value="cube">Куб</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Модель освещения</div>
+                            <select class="form-select" id="shadingModel">
+                                <option value="blinn-phong" selected>Blinn-Phong</option>
+                                <option value="phong">Phong</option>
+                                <option value="lambert">Lambert</option>
+                            </select>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Поворот объекта</div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Поворот X: <span id="rotXValue">-20</span>°</label>
+                                <input type="range" class="form-range" id="rotX" min="-89" max="89" step="1"
+                                    value="-20">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Поворот Y: <span id="rotYValue">30</span>°</label>
+                                <input type="range" class="form-range" id="rotY" min="-180" max="180" step="1"
+                                    value="30">
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Материал (фикс. цвет)</div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Фоновое (k<sub>a</sub>): <span
+                                        id="kaValue">0.20</span></label>
+                                <input type="range" class="form-range" id="ka" min="0" max="1" step="0.01" value="0.20">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Диффузное (k<sub>d</sub>): <span
+                                        id="kdValue">0.70</span></label>
+                                <input type="range" class="form-range" id="kd" min="0" max="1" step="0.01" value="0.70">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Зеркальное (k<sub>s</sub>): <span
+                                        id="ksValue">0.35</span></label>
+                                <input type="range" class="form-range" id="ks" min="0" max="1" step="0.01" value="0.35">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Блеск (n): <span id="shininessValue">48</span></label>
+                                <input type="range" class="form-range" id="shininess" min="1" max="200" step="1"
+                                    value="48">
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Источник света</div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Интенсивность: <span id="lightIValue">1.20</span></label>
+                                <input type="range" class="form-range" id="lightI" min="0" max="2" step="0.01"
+                                    value="1.20">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">X: <span id="lightXValue">4.0</span></label>
+                                <input type="range" class="form-range" id="lightX" min="-10" max="10" step="0.5"
+                                    value="4">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Y: <span id="lightYValue">3.0</span></label>
+                                <input type="range" class="form-range" id="lightY" min="-10" max="10" step="0.5"
+                                    value="3">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Z: <span id="lightZValue">6.0</span></label>
+                                <input type="range" class="form-range" id="lightZ" min="0" max="15" step="0.5"
+                                    value="6">
+                            </div>
+
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="useAtt" checked>
+                                <label class="form-check-label" for="useAtt">Затухание по расстоянию</label>
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">k затухания: <span id="attKValue">0.080</span></label>
+                                <input type="range" class="form-range" id="attK" min="0" max="0.3" step="0.001"
+                                    value="0.080">
+                            </div>
+
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="showLightPosition" checked>
+                                <label class="form-check-label" for="showLightPosition">Показывать источник</label>
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Наблюдатель</div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Дистанция камеры: <span
+                                        id="cameraDistanceValue">10.0</span></label>
+                                <input type="range" class="form-range" id="cameraDistance" min="5" max="20" step="0.5"
+                                    value="10">
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Качество</div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Детализация: <span id="resolutionValue">30</span></label>
+                                <input type="range" class="form-range" id="resolution" min="10" max="60" step="5"
+                                    value="30">
+                            </div>
+
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="showWireframe">
+                                <label class="form-check-label" for="showWireframe">Показывать сетку</label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-secondary" id="resetAll">Сброс</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ============================================================================
+        // Упрощённая задача 1: 1 источник, фиксированные цвета, поворот/координаты ползунками
+        // ============================================================================
+
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d", { alpha: false });
+
+        // фиксированные цвета (без color-picker)
+        const OBJ_COLOR = { r: 231 / 255, g: 76 / 255, b: 60 / 255 };   // #e74c3c
+        const LIGHT_COLOR = { r: 1, g: 1, b: 1 };                  // белый
+        const BG = "#1a1a2e";
+
+        const focal = 280;
+        const cameraHeight = 0.30; // небольшой сдвиг по Y в проекции
+
+        const el = (id) => document.getElementById(id);
+        const toRad = (deg) => deg * Math.PI / 180;
+        const clamp01 = (x) => Math.min(1, Math.max(0, x));
+        const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+
+        // ============================================================================
+        // Vec3
+        // ============================================================================
+        class Vec3 {
+            constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; }
+            add(v) { return new Vec3(this.x + v.x, this.y + v.y, this.z + v.z); }
+            subtract(v) { return new Vec3(this.x - v.x, this.y - v.y, this.z - v.z); }
+            multiply(s) { return new Vec3(this.x * s, this.y * s, this.z * s); }
+            dot(v) { return this.x * v.x + this.y * v.y + this.z * v.z; }
+            cross(v) {
+                return new Vec3(
+                    this.y * v.z - this.z * v.y,
+                    this.z * v.x - this.x * v.z,
+                    this.x * v.y - this.y * v.x
+                );
+            }
+            length() { return Math.hypot(this.x, this.y, this.z); }
+            normalize() {
+                const len = this.length();
+                if (len === 0) return new Vec3(0, 0, 1);
+                return new Vec3(this.x / len, this.y / len, this.z / len);
+            }
+        }
+
+        // ============================================================================
+        // Вращение
+        // ============================================================================
+        function rotateX(p, a) {
+            const c = Math.cos(a), s = Math.sin(a);
+            return new Vec3(p.x, p.y * c - p.z * s, p.y * s + p.z * c);
+        }
+        function rotateY(p, a) {
+            const c = Math.cos(a), s = Math.sin(a);
+            return new Vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
+        }
+        function rotateXY(p, ax, ay) { return rotateY(rotateX(p, ax), ay); }
+
+        // ============================================================================
+        // Поверхности + нормали
+        // ============================================================================
+        function bernstein(i, t) {
+            const s = 1 - t;
+            switch (i) {
+                case 0: return s * s * s;
+                case 1: return 3 * s * s * t;
+                case 2: return 3 * s * t * t;
+                case 3: return t * t * t;
+            }
+        }
+        function bernsteinDerivative(i, t) {
+            const s = 1 - t;
+            switch (i) {
+                case 0: return -3 * s * s;
+                case 1: return 3 * s * s - 6 * s * t;
+                case 2: return 6 * s * t - 3 * t * t;
+                case 3: return 3 * t * t;
+            }
+        }
+
+        // bilinear
+        function bilinearSurface(u, v) {
+            const P00 = new Vec3(-2, -2, 0);
+            const P10 = new Vec3(2, -2, 0.5);
+            const P01 = new Vec3(-2, 2, 0.5);
+            const P11 = new Vec3(2, 2, 1.0);
+
+            return new Vec3(
+                (1 - u) * (1 - v) * P00.x + u * (1 - v) * P10.x + (1 - u) * v * P01.x + u * v * P11.x,
+                (1 - u) * (1 - v) * P00.y + u * (1 - v) * P10.y + (1 - u) * v * P01.y + u * v * P11.y,
+                (1 - u) * (1 - v) * P00.z + u * (1 - v) * P10.z + (1 - u) * v * P01.z + u * v * P11.z
+            );
+        }
+        function bilinearNormal(u, v) {
+            const eps = 0.001;
+            const P = bilinearSurface(u, v);
+            const Pu = bilinearSurface(u + eps, v).subtract(P);
+            const Pv = bilinearSurface(u, v + eps).subtract(P);
+            return Pu.cross(Pv).normalize();
+        }
+
+        // Bezier
+        const bezierCP = [];
+        for (let i = 0; i < 4; i++) {
+            bezierCP[i] = [];
+            for (let j = 0; j < 4; j++) {
+                const x = (i - 1.5) * 1.5;
+                const y = (j - 1.5) * 1.5;
+                const z = Math.sin(i * 0.8) * Math.cos(j * 0.8) * 1.2;
+                bezierCP[i][j] = new Vec3(x, y, z);
+            }
+        }
+        function bezierSurface(u, v) {
+            const p = new Vec3(0, 0, 0);
+            for (let i = 0; i < 4; i++) {
+                const Bu = bernstein(i, u);
+                for (let j = 0; j < 4; j++) {
+                    const Bv = bernstein(j, v);
+                    const P = bezierCP[i][j];
+                    const w = Bu * Bv;
+                    p.x += w * P.x; p.y += w * P.y; p.z += w * P.z;
+                }
+            }
+            return p;
+        }
+        function bezierNormal(u, v) {
+            const Su = new Vec3(0, 0, 0);
+            const Sv = new Vec3(0, 0, 0);
+
+            for (let i = 0; i < 4; i++) {
+                const Bu = bernstein(i, u);
+                const dBu = bernsteinDerivative(i, u);
+                for (let j = 0; j < 4; j++) {
+                    const Bv = bernstein(j, v);
+                    const dBv = bernsteinDerivative(j, v);
+                    const P = bezierCP[i][j];
+
+                    Su.x += dBu * Bv * P.x; Su.y += dBu * Bv * P.y; Su.z += dBu * Bv * P.z;
+                    Sv.x += Bu * dBv * P.x; Sv.y += Bu * dBv * P.y; Sv.z += Bu * dBv * P.z;
+                }
+            }
+            return Su.cross(Sv).normalize();
+        }
+
+        // sphere
+        function sphereSurface(u, v) {
+            const theta = u * Math.PI;
+            const phi = v * 2 * Math.PI;
+            const r = 1.6;
+            return new Vec3(
+                r * Math.sin(theta) * Math.cos(phi),
+                r * Math.sin(theta) * Math.sin(phi),
+                r * Math.cos(theta)
+            );
+        }
+        function sphereNormal(u, v) {
+            return sphereSurface(u, v).normalize();
+        }
+
+        // cube (6 граней, фикс. цвета граней)
+        const CUBE_FACE_COLORS = [
+            { r: 237 / 255, g: 137 / 255, b: 54 / 255 },  // +Z
+            { r: 72 / 255, g: 187 / 255, b: 120 / 255 }, // -Z
+            { r: 102 / 255, g: 126 / 255, b: 234 / 255 }, // -X
+            { r: 229 / 255, g: 62 / 255, b: 62 / 255 },  // +X
+            { r: 56 / 255, g: 178 / 255, b: 172 / 255 }, // +Y
+            { r: 128 / 255, g: 90 / 255, b: 213 / 255 }  // -Y
+        ];
+        function cubeSurface(u, v, face) {
+            const s = 1.6;
+            switch (face) {
+                case 0: return new Vec3(-s + 2 * s * u, -s + 2 * s * v, s); // +Z
+                case 1: return new Vec3(-s + 2 * s * u, -s + 2 * s * v, -s); // -Z
+                case 2: return new Vec3(-s, -s + 2 * s * u, -s + 2 * s * v); // -X
+                case 3: return new Vec3(s, -s + 2 * s * u, -s + 2 * s * v); // +X
+                case 4: return new Vec3(-s + 2 * s * u, s, -s + 2 * s * v); // +Y
+                case 5: return new Vec3(-s + 2 * s * u, -s, -s + 2 * s * v); // -Y
+            }
+        }
+        function cubeNormal(face) {
+            switch (face) {
+                case 0: return new Vec3(0, 0, 1);
+                case 1: return new Vec3(0, 0, -1);
+                case 2: return new Vec3(-1, 0, 0);
+                case 3: return new Vec3(1, 0, 0);
+                case 4: return new Vec3(0, 1, 0);
+                case 5: return new Vec3(0, -1, 0);
+            }
+        }
+
+        // ============================================================================
+        // Освещение (Lambert / Phong / Blinn-Phong)
+        // ============================================================================
+        function calculateLighting(point, normal, material, lightPos, cameraPos, model, lightI, useAtt, attK) {
+            const ambientIntensity = 0.2;
+
+            let r = material.ka * ambientIntensity * material.color.r;
+            let g = material.ka * ambientIntensity * material.color.g;
+            let b = material.ka * ambientIntensity * material.color.b;
+
+            const N = normal.normalize();
+            const V = cameraPos.subtract(point).normalize();
+
+            const toLight = lightPos.subtract(point);
+            const dist = toLight.length();
+            const L = toLight.normalize();
+
+            const attenuation = useAtt ? (1.0 / (1.0 + attK * dist * dist)) : 1.0;
+
+            const NdotL = Math.max(0, N.dot(L));
+            const diffuse = material.kd * lightI * attenuation * NdotL;
+
+            r += diffuse * material.color.r * LIGHT_COLOR.r;
+            g += diffuse * material.color.g * LIGHT_COLOR.g;
+            b += diffuse * material.color.b * LIGHT_COLOR.b;
+
+            if (NdotL > 0 && model !== 'lambert') {
+                let spec = 0;
+
+                if (model === 'blinn-phong') {
+                    const H = L.add(V).normalize();
+                    const NdotH = Math.max(0, N.dot(H));
+                    spec = material.ks * lightI * attenuation * Math.pow(NdotH, material.shininess);
+                } else {
+                    const R = N.multiply(2 * NdotL).subtract(L).normalize();
+                    const RdotV = Math.max(0, R.dot(V));
+                    spec = material.ks * lightI * attenuation * Math.pow(RdotV, material.shininess);
+                }
+
+                r += spec * LIGHT_COLOR.r;
+                g += spec * LIGHT_COLOR.g;
+                b += spec * LIGHT_COLOR.b;
+            }
+
+            r = clamp01(r); g = clamp01(g); b = clamp01(b);
+
+            // Gamma correction
+            const gamma = 2.2;
+            r = Math.pow(r, 1 / gamma);
+            g = Math.pow(g, 1 / gamma);
+            b = Math.pow(b, 1 / gamma);
+
+            return { r: Math.floor(r * 255), g: Math.floor(g * 255), b: Math.floor(b * 255) };
+        }
+
+        // ============================================================================
+        // Проекция
+        // ============================================================================
+        function projectPointPerspective(point, cameraDistance) {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            const zCam = cameraDistance - point.z;
+            if (zCam <= 0.1) return null;
+
+            const k = focal / zCam;
+            return { x: cx + point.x * k, y: cy - (point.y - cameraHeight) * k, zCam };
+        }
+
+        // ============================================================================
+        // Патчи (квадраты), сортировка и отрисовка без артефактов
+        // ============================================================================
+        function buildPatches(state) {
+            const patches = [];
+            const res = state.resolution;
+            const du = 1 / res;
+            const dv = 1 / res;
+
+            const ax = state.rotX;
+            const ay = state.rotY;
+
+            let surfaceFunc = null;
+            let normalFunc = null;
+            let isCube = false;
+
+            switch (state.surfaceType) {
+                case 'bilinear': surfaceFunc = bilinearSurface; normalFunc = bilinearNormal; break;
+                case 'bezier': surfaceFunc = bezierSurface; normalFunc = bezierNormal; break;
+                case 'sphere': surfaceFunc = sphereSurface; normalFunc = sphereNormal; break;
+                case 'cube': isCube = true; break;
+            }
+
+            if (isCube) {
+                for (let face = 0; face < 6; face++) {
+                    for (let i = 0; i < res; i++) {
+                        for (let j = 0; j < res; j++) {
+                            const u0 = i * du, v0 = j * dv;
+                            const u1 = (i + 1) * du, v1 = (j + 1) * dv;
+                            const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
+
+                            const p00 = rotateXY(cubeSurface(u0, v0, face), ax, ay);
+                            const p10 = rotateXY(cubeSurface(u1, v0, face), ax, ay);
+                            const p11 = rotateXY(cubeSurface(u1, v1, face), ax, ay);
+                            const p01 = rotateXY(cubeSurface(u0, v1, face), ax, ay);
+
+                            const pc = rotateXY(cubeSurface(uc, vc, face), ax, ay);
+                            const nc = rotateXY(cubeNormal(face), ax, ay).normalize();
+
+                            // backface cull
+                            const viewDir = state.camera.subtract(pc);
+                            if (nc.dot(viewDir) <= 0) continue;
+
+                            patches.push({
+                                pts3: [p00, p10, p11, p01],
+                                center: pc,
+                                normal: nc,
+                                baseColor: CUBE_FACE_COLORS[face]
+                            });
+                        }
+                    }
+                }
+                return patches;
+            }
+
+            for (let i = 0; i < res; i++) {
+                for (let j = 0; j < res; j++) {
+                    const u0 = i * du, v0 = j * dv;
+                    const u1 = (i + 1) * du, v1 = (j + 1) * dv;
+                    const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
+
+                    const p00 = rotateXY(surfaceFunc(u0, v0), ax, ay);
+                    const p10 = rotateXY(surfaceFunc(u1, v0), ax, ay);
+                    const p11 = rotateXY(surfaceFunc(u1, v1), ax, ay);
+                    const p01 = rotateXY(surfaceFunc(u0, v1), ax, ay);
+
+                    const pc = rotateXY(surfaceFunc(uc, vc), ax, ay);
+                    const nc = rotateXY(normalFunc(uc, vc), ax, ay).normalize();
+
+                    const viewDir = state.camera.subtract(pc);
+                    if (nc.dot(viewDir) <= 0) continue;
+
+                    patches.push({
+                        pts3: [p00, p10, p11, p01],
+                        center: pc,
+                        normal: nc,
+                        baseColor: OBJ_COLOR
+                    });
+                }
+            }
+            return patches;
+        }
+
+        function drawLightMarker(lightPos, cameraDistance) {
+            const lp = projectPointPerspective(lightPos, cameraDistance);
+            if (!lp) return;
+
+            ctx.fillStyle = "#ffeb3b";
+            ctx.strokeStyle = "#ffa000";
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.arc(lp.x, lp.y, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function render() {
+            ctx.fillStyle = BG;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const st = readState();
+            syncLabels(st);
+
+            const patches = buildPatches(st);
+
+            // посчитаем 2D точки + глубину, и отсортируем (Painter)
+            const toDraw = [];
+            for (const p of patches) {
+                const pts2 = p.pts3.map(q => projectPointPerspective(q, st.cameraDistance));
+                if (pts2.some(x => !x)) continue;
+
+                const depth = st.camera.subtract(p.center).length(); // дальнее->ближнее
+                toDraw.push({ pts2, depth, center: p.center, normal: p.normal, baseColor: p.baseColor });
+            }
+            toDraw.sort((a, b) => b.depth - a.depth);
+
+            // рисуем патчи
+            const wire = st.showWireframe;
+            ctx.lineWidth = 0.6;
+
+            for (const item of toDraw) {
+                const material = {
+                    color: item.baseColor,
+                    ka: st.ka,
+                    kd: st.kd,
+                    ks: st.ks,
+                    shininess: st.shininess
+                };
+
+                const col = calculateLighting(
+                    item.center, item.normal,
+                    material,
+                    st.lightPos,
+                    st.camera,
+                    st.shadingModel,
+                    st.lightI,
+                    st.useAtt,
+                    st.attK
+                );
+
+                ctx.fillStyle = `rgb(${col.r},${col.g},${col.b})`;
+                ctx.strokeStyle = `rgba(0,0,0,0.18)`;
+
+                const p = item.pts2;
+                ctx.beginPath();
+                ctx.moveTo(p[0].x, p[0].y);
+                ctx.lineTo(p[1].x, p[1].y);
+                ctx.lineTo(p[2].x, p[2].y);
+                ctx.lineTo(p[3].x, p[3].y);
+                ctx.closePath();
+                ctx.fill();
+                if (wire) ctx.stroke();
+            }
+
+            if (st.showLightPosition) drawLightMarker(st.lightPos, st.cameraDistance);
+        }
+
+        // ============================================================================
+        // State + UI
+        // ============================================================================
+        function readState() {
+            const rotXDeg = parseFloat(el("rotX").value);
+            const rotYDeg = parseFloat(el("rotY").value);
+
+            return {
+                surfaceType: el("surfaceType").value,
+                shadingModel: el("shadingModel").value,
+
+                rotXDeg, rotYDeg,
+                rotX: toRad(rotXDeg),
+                rotY: toRad(rotYDeg),
+
+                ka: parseFloat(el("ka").value),
+                kd: parseFloat(el("kd").value),
+                ks: parseFloat(el("ks").value),
+                shininess: parseFloat(el("shininess").value),
+
+                lightI: parseFloat(el("lightI").value),
+                lightPos: new Vec3(
+                    parseFloat(el("lightX").value),
+                    parseFloat(el("lightY").value),
+                    parseFloat(el("lightZ").value)
+                ),
+                showLightPosition: el("showLightPosition").checked,
+
+                useAtt: el("useAtt").checked,
+                attK: parseFloat(el("attK").value),
+
+                cameraDistance: parseFloat(el("cameraDistance").value),
+                camera: new Vec3(0, 0, parseFloat(el("cameraDistance").value)),
+
+                resolution: parseInt(el("resolution").value, 10),
+                showWireframe: el("showWireframe").checked
+            };
+        }
+
+        function syncLabels(st) {
+            el("rotXValue").textContent = String(Math.round(st.rotXDeg));
+            el("rotYValue").textContent = String(Math.round(st.rotYDeg));
+
+            el("kaValue").textContent = st.ka.toFixed(2);
+            el("kdValue").textContent = st.kd.toFixed(2);
+            el("ksValue").textContent = st.ks.toFixed(2);
+            el("shininessValue").textContent = String(Math.round(st.shininess));
+
+            el("lightIValue").textContent = st.lightI.toFixed(2);
+            el("lightXValue").textContent = st.lightPos.x.toFixed(1);
+            el("lightYValue").textContent = st.lightPos.y.toFixed(1);
+            el("lightZValue").textContent = st.lightPos.z.toFixed(1);
+
+            el("attKValue").textContent = st.attK.toFixed(3);
+
+            el("cameraDistanceValue").textContent = st.cameraDistance.toFixed(1);
+            el("resolutionValue").textContent = String(st.resolution);
+        }
+
+        const defaults = {
+            surfaceType: "bezier",
+            shadingModel: "blinn-phong",
+            rotX: -20,
+            rotY: 30,
+            ka: 0.20,
+            kd: 0.70,
+            ks: 0.35,
+            shininess: 48,
+            lightI: 1.20,
+            lightX: 4,
+            lightY: 3,
+            lightZ: 6,
+            useAtt: true,
+            attK: 0.080,
+            showLightPosition: true,
+            cameraDistance: 10,
+            resolution: 30,
+            showWireframe: false
+        };
+
+        function resetAll() {
+            el("surfaceType").value = defaults.surfaceType;
+            el("shadingModel").value = defaults.shadingModel;
+
+            el("rotX").value = String(defaults.rotX);
+            el("rotY").value = String(defaults.rotY);
+
+            el("ka").value = String(defaults.ka);
+            el("kd").value = String(defaults.kd);
+            el("ks").value = String(defaults.ks);
+            el("shininess").value = String(defaults.shininess);
+
+            el("lightI").value = String(defaults.lightI);
+            el("lightX").value = String(defaults.lightX);
+            el("lightY").value = String(defaults.lightY);
+            el("lightZ").value = String(defaults.lightZ);
+
+            el("useAtt").checked = defaults.useAtt;
+            el("attK").value = String(defaults.attK);
+
+            el("showLightPosition").checked = defaults.showLightPosition;
+
+            el("cameraDistance").value = String(defaults.cameraDistance);
+            el("resolution").value = String(defaults.resolution);
+            el("showWireframe").checked = defaults.showWireframe;
+
+            render();
+        }
+
+        function bind() {
+            const ids = [
+                "surfaceType", "shadingModel",
+                "rotX", "rotY",
+                "ka", "kd", "ks", "shininess",
+                "lightI", "lightX", "lightY", "lightZ",
+                "useAtt", "attK",
+                "showLightPosition",
+                "cameraDistance",
+                "resolution",
+                "showWireframe"
+            ];
+            ids.forEach(id => {
+                const node = el(id);
+                node.addEventListener("input", render);
+                node.addEventListener("change", render);
+            });
+
+            el("resetAll").addEventListener("click", resetAll);
+        }
+
+        bind();
+        render();
+    </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа по компьютерной графике</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .navigation {
+            background: #2d3748;
+            padding: 15px 30px;
+            border-bottom: 3px solid #1a202c;
+        }
+
+        .nav-btn {
+            min-width: 80px;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #fff;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+        }
+
+        .lab-info {
+            background: #f7fafc;
+            padding: 20px 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .canvas-wrapper {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            background: white;
+            border: 1px solid #a0aec0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls-panel {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 25px;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .controls-panel h3 {
+            color: #2d3748;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #cbd5e0;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Заголовок курса -->
+        <div class="header">
+            <h1 class="mb-2">Лабораторная работа 6</h1>
+            <h2 class="h4 fw-light opacity-75">
+                Сформировать тени при освещении многоугольников и поверхностей, сформированных при выполнении темы 5,
+                точечным источником освещения без учета интенсивности освящения тел (без учета зеркальной и диффузионной
+                составляющих). Обеспечить преобразование сцены при изменении координат источника освещения или
+                наблюдателя.
+            </h2>
+        </div>
+
+        <!-- Рабочая область -->
+        <div class="row g-3 p-4">
+            <!-- Область Canvas -->
+            <div class="col-lg-8">
+                <div class="canvas-wrapper">
+                    <canvas id="canvas" width="800" height="600"></canvas>
+                </div>
+            </div>
+
+            <!-- Панель управления -->
+            <div class="col-lg-4">
+                <div class="controls-panel">
+                    <h3 class="h5 mb-3">Контроллеры</h3>
+
+                    <div id="controls">
+                        <!-- Тип поверхности -->
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Параметрическая поверхность</div>
+                            <select class="form-select" id="surfaceType">
+                                <option value="bezier" selected>Поверхность Безье</option>
+                                <option value="bilinear">Билинейная поверхность</option>
+                                <option value="bspline">B-сплайн</option>
+                                <option value="sphere">Сфера</option>
+                                <option value="cube">Куб</option>
+                            </select>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <!-- Поворот (ползунки вместо мыши) -->
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Поворот объекта</div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Поворот X: <span id="rotXValue">-29</span>°</label>
+                                <input type="range" class="form-range" id="rotX" min="-89" max="89" step="1"
+                                    value="-29">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Поворот Y: <span id="rotYValue">34</span>°</label>
+                                <input type="range" class="form-range" id="rotY" min="-180" max="180" step="1"
+                                    value="34">
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <!-- Настройки отображения -->
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Отображение</div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="showShadows" checked>
+                                <label class="form-check-label" for="showShadows">Показать тени</label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="showGround" checked>
+                                <label class="form-check-label" for="showGround">Показать плоскость</label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="showLightPosition" checked>
+                                <label class="form-check-label" for="showLightPosition">Показать источник света</label>
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <!-- Источник света (ползунки) -->
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Источник света</div>
+
+                            <div class="mt-2">
+                                <label class="form-label">X: <span id="lightXValue">3.0</span></label>
+                                <input type="range" class="form-range" id="lightX" min="-10" max="10" step="0.5"
+                                    value="3">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Y: <span id="lightYValue">4.0</span></label>
+                                <input type="range" class="form-range" id="lightY" min="-10" max="10" step="0.5"
+                                    value="4">
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Z (высота): <span id="lightZValue">6.0</span></label>
+                                <input type="range" class="form-range" id="lightZ" min="0" max="15" step="0.5"
+                                    value="6">
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <!-- Качество -->
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-2">Качество</div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Детализация: <span id="resolutionValue">25</span></label>
+                                <input type="range" class="form-range" id="resolution" min="10" max="50" step="5"
+                                    value="25">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-gradient w-100" id="resetAll">Сбросить всё</button>
+                        </div>
+
+                        <hr class="my-3">
+                        <div class="small text-secondary">
+                            Подсказка: поверни объект ползунками, затем меняй положение источника света и наблюдай
+                            изменение тени.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ============================================================================
+        // Константы сцены
+        // ============================================================================
+        const objectColor = { r: 52, g: 152, b: 219 };  // #3498db
+        const groundColor = { r: 149, g: 165, b: 166 }; // #95a5a6
+        const shadowOpacity = 0.45;
+
+        const groundZ = -2.0;
+
+        // Камера фиксированная (так как в контролах нет параметров наблюдателя)
+        const cameraDistance = 10.0; // camera at (0,0,cameraDistance)
+        const cameraHeight = 0.30;
+        const focal = 280;
+
+        // ============================================================================
+        // Векторная математика
+        // ============================================================================
+        class Vec3 {
+            constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; }
+            add(v) { return new Vec3(this.x + v.x, this.y + v.y, this.z + v.z); }
+            subtract(v) { return new Vec3(this.x - v.x, this.y - v.y, this.z - v.z); }
+            multiply(s) { return new Vec3(this.x * s, this.y * s, this.z * s); }
+            dot(v) { return this.x * v.x + this.y * v.y + this.z * v.z; }
+            length() { return Math.hypot(this.x, this.y, this.z); }
+            normalize() {
+                const len = this.length();
+                if (len === 0) return new Vec3(0, 0, 1);
+                return new Vec3(this.x / len, this.y / len, this.z / len);
+            }
+        }
+
+        // ============================================================================
+        // Вращение
+        // ============================================================================
+        function rotateX(p, a) {
+            const c = Math.cos(a), s = Math.sin(a);
+            return new Vec3(p.x, p.y * c - p.z * s, p.y * s + p.z * c);
+        }
+        function rotateY(p, a) {
+            const c = Math.cos(a), s = Math.sin(a);
+            return new Vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
+        }
+        function rotateXY(p, ax, ay) { return rotateY(rotateX(p, ax), ay); }
+
+        const toRad = (deg) => deg * Math.PI / 180;
+
+        // ============================================================================
+        // Поверхности
+        // ============================================================================
+        function bernstein(i, t) {
+            const s = 1 - t;
+            switch (i) {
+                case 0: return s * s * s;
+                case 1: return 3 * s * s * t;
+                case 2: return 3 * s * t * t;
+                case 3: return t * t * t;
+            }
+        }
+
+        function bilinearSurface(u, v) {
+            const P00 = new Vec3(-1.5, -1.5, 0);
+            const P10 = new Vec3(1.5, -1.5, 0.3);
+            const P01 = new Vec3(-1.5, 1.5, 0.3);
+            const P11 = new Vec3(1.5, 1.5, 0.8);
+
+            return new Vec3(
+                (1 - u) * (1 - v) * P00.x + u * (1 - v) * P10.x + (1 - u) * v * P01.x + u * v * P11.x,
+                (1 - u) * (1 - v) * P00.y + u * (1 - v) * P10.y + (1 - u) * v * P01.y + u * v * P11.y,
+                (1 - u) * (1 - v) * P00.z + u * (1 - v) * P10.z + (1 - u) * v * P01.z + u * v * P11.z
+            );
+        }
+
+        // Безье CP
+        const bezierCP = [];
+        for (let i = 0; i < 4; i++) {
+            bezierCP[i] = [];
+            for (let j = 0; j < 4; j++) {
+                const x = (i - 1.5) * 1.0;
+                const y = (j - 1.5) * 1.0;
+                const z = Math.sin(i * 0.8) * Math.cos(j * 0.8) * 0.8 + 0.5;
+                bezierCP[i][j] = new Vec3(x, y, z);
+            }
+        }
+
+        function bezierSurface(u, v) {
+            const p = new Vec3(0, 0, 0);
+            for (let i = 0; i < 4; i++) {
+                const Bu = bernstein(i, u);
+                for (let j = 0; j < 4; j++) {
+                    const Bv = bernstein(j, v);
+                    const P = bezierCP[i][j];
+                    const w = Bu * Bv;
+                    p.x += w * P.x;
+                    p.y += w * P.y;
+                    p.z += w * P.z;
+                }
+            }
+            return p;
+        }
+
+        function bsplineSurface(u, v) { return bezierSurface(u, v); }
+
+        function sphereSurface(u, v) {
+            const theta = u * Math.PI;
+            const phi = v * 2 * Math.PI;
+            const r = 1.5;
+            return new Vec3(
+                r * Math.sin(theta) * Math.cos(phi),
+                r * Math.sin(theta) * Math.sin(phi),
+                r * Math.cos(theta) + r
+            );
+        }
+
+        function cubeSurface(u, v, face) {
+            const size = 1.5;
+            const zUp = 1.2; // приподнимем над плоскостью
+            switch (face) {
+                case 0: return new Vec3(-size + 2 * size * u, -size + 2 * size * v, size + zUp);       // +Z
+                case 1: return new Vec3(-size + 2 * size * u, -size + 2 * size * v, -size + zUp);      // -Z
+                case 2: return new Vec3(-size, -size + 2 * size * u, -size + 2 * size * v + zUp);      // -X
+                case 3: return new Vec3(size, -size + 2 * size * u, -size + 2 * size * v + zUp);       // +X
+                case 4: return new Vec3(-size + 2 * size * u, size, -size + 2 * size * v + zUp);       // +Y
+                case 5: return new Vec3(-size + 2 * size * u, -size, -size + 2 * size * v + zUp);      // -Y
+            }
+        }
+
+        // ============================================================================
+        // Тень: проекция на плоскость z=groundZ вдоль луча от света
+        // ============================================================================
+        function projectShadowPoint(point, lightPos, groundZ) {
+            const dir = point.subtract(lightPos);
+            if (Math.abs(dir.z) < 1e-6) return null;
+
+            const t = (groundZ - lightPos.z) / dir.z;
+            if (t < 0) return null;
+
+            return new Vec3(
+                lightPos.x + t * dir.x,
+                lightPos.y + t * dir.y,
+                groundZ
+            );
+        }
+
+        // ============================================================================
+        // Проекция 3D -> 2D
+        // ============================================================================
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const shadowCanvas = document.createElement('canvas');
+        shadowCanvas.width = canvas.width;
+        shadowCanvas.height = canvas.height;
+        const shadowCtx = shadowCanvas.getContext('2d');
+
+        function projectPoint(p) {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            const zCam = cameraDistance - p.z;
+            if (zCam <= 0.1) return null;
+
+            const k = focal / zCam;
+            return {
+                x: cx + p.x * k,
+                y: cy - (p.y - cameraHeight) * k,
+                zCam
+            };
+        }
+
+        // ============================================================================
+        // Построение квадов сетки
+        // ============================================================================
+        function buildSurfaceQuads(surfaceType, resolution, ax, ay) {
+            const quads = [];
+            const du = 1 / resolution;
+            const dv = 1 / resolution;
+
+            let surfaceFunc = null;
+            let isCube = false;
+
+            switch (surfaceType) {
+                case 'bilinear': surfaceFunc = bilinearSurface; break;
+                case 'bezier': surfaceFunc = bezierSurface; break;
+                case 'bspline': surfaceFunc = bsplineSurface; break;
+                case 'sphere': surfaceFunc = sphereSurface; break;
+                case 'cube': isCube = true; break;
+            }
+
+            if (isCube) {
+                for (let face = 0; face < 6; face++) {
+                    for (let i = 0; i < resolution; i++) {
+                        for (let j = 0; j < resolution; j++) {
+                            const u0 = i * du, v0 = j * dv;
+                            const u1 = (i + 1) * du, v1 = (j + 1) * dv;
+
+                            const pts = [
+                                cubeSurface(u0, v0, face),
+                                cubeSurface(u1, v0, face),
+                                cubeSurface(u1, v1, face),
+                                cubeSurface(u0, v1, face),
+                            ].map(p => rotateXY(p, ax, ay));
+
+                            const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) / 4;
+                            quads.push({ pts, avgZ });
+                        }
+                    }
+                }
+                return quads;
+            }
+
+            for (let i = 0; i < resolution; i++) {
+                for (let j = 0; j < resolution; j++) {
+                    const u0 = i * du, v0 = j * dv;
+                    const u1 = (i + 1) * du, v1 = (j + 1) * dv;
+
+                    const pts = [
+                        surfaceFunc(u0, v0),
+                        surfaceFunc(u1, v0),
+                        surfaceFunc(u1, v1),
+                        surfaceFunc(u0, v1),
+                    ].map(p => rotateXY(p, ax, ay));
+
+                    const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) / 4;
+                    quads.push({ pts, avgZ });
+                }
+            }
+
+            return quads;
+        }
+
+        // ============================================================================
+        // Рисование
+        // ============================================================================
+        function drawGround() {
+            const groundSize = 8;
+            const groundPts3 = [
+                new Vec3(-groundSize, -groundSize, groundZ),
+                new Vec3(groundSize, -groundSize, groundZ),
+                new Vec3(groundSize, groundSize, groundZ),
+                new Vec3(-groundSize, groundSize, groundZ),
+            ];
+
+            const gp = groundPts3.map(projectPoint);
+            if (gp.some(x => !x)) return null;
+
+            ctx.fillStyle = `rgb(${groundColor.r}, ${groundColor.g}, ${groundColor.b})`;
+            ctx.beginPath();
+            ctx.moveTo(gp[0].x, gp[0].y);
+            ctx.lineTo(gp[1].x, gp[1].y);
+            ctx.lineTo(gp[2].x, gp[2].y);
+            ctx.lineTo(gp[3].x, gp[3].y);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = `rgba(0,0,0,0.15)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            return gp;
+        }
+
+        function buildShadowMask(quads, lightPos) {
+            shadowCtx.setTransform(1, 0, 0, 1, 0, 0);
+            shadowCtx.clearRect(0, 0, shadowCanvas.width, shadowCanvas.height);
+            shadowCtx.fillStyle = "rgba(0,0,0,1)";
+
+            for (const q of quads) {
+                const sp = q.pts
+                    .map(p => projectShadowPoint(p, lightPos, groundZ))
+                    .map(p => (p ? projectPoint(p) : null));
+
+                if (sp.some(x => !x)) continue;
+
+                shadowCtx.beginPath();
+                shadowCtx.moveTo(sp[0].x, sp[0].y);
+                shadowCtx.lineTo(sp[1].x, sp[1].y);
+                shadowCtx.lineTo(sp[2].x, sp[2].y);
+                shadowCtx.lineTo(sp[3].x, sp[3].y);
+                shadowCtx.closePath();
+                shadowCtx.fill();
+            }
+        }
+
+        function drawObject(quads) {
+            // Painter: дальнее -> ближнее
+            quads.sort((a, b) => a.avgZ - b.avgZ);
+
+            ctx.fillStyle = `rgb(${objectColor.r}, ${objectColor.g}, ${objectColor.b})`;
+            ctx.strokeStyle = `rgba(0,0,0,0.18)`;
+            ctx.lineWidth = 0.6;
+
+            for (const q of quads) {
+                const p = q.pts.map(projectPoint);
+                if (p.some(x => !x)) continue;
+
+                ctx.beginPath();
+                ctx.moveTo(p[0].x, p[0].y);
+                ctx.lineTo(p[1].x, p[1].y);
+                ctx.lineTo(p[2].x, p[2].y);
+                ctx.lineTo(p[3].x, p[3].y);
+                ctx.closePath();
+
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        function drawLightMarker(lightPos) {
+            const lp = projectPoint(lightPos);
+            if (!lp) return;
+
+            ctx.fillStyle = '#ffeb3b';
+            ctx.strokeStyle = '#ffa000';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.arc(lp.x, lp.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(255, 235, 59, 0.55)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                const a = (i / 8) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(lp.x + Math.cos(a) * 12, lp.y + Math.sin(a) * 12);
+                ctx.lineTo(lp.x + Math.cos(a) * 18, lp.y + Math.sin(a) * 18);
+                ctx.stroke();
+            }
+        }
+
+        // ============================================================================
+        // UI helpers
+        // ============================================================================
+        function setText(id, txt) {
+            const n = document.getElementById(id);
+            if (n) n.textContent = txt;
+        }
+
+        function readState() {
+            const surfaceType = document.getElementById('surfaceType').value;
+            const resolution = parseInt(document.getElementById('resolution').value, 10);
+
+            const showShadows = document.getElementById('showShadows').checked;
+            const showGround = document.getElementById('showGround').checked;
+            const showLightPosition = document.getElementById('showLightPosition').checked;
+
+            const rotXDeg = parseFloat(document.getElementById('rotX').value);
+            const rotYDeg = parseFloat(document.getElementById('rotY').value);
+
+            const lightPos = new Vec3(
+                parseFloat(document.getElementById('lightX').value),
+                parseFloat(document.getElementById('lightY').value),
+                parseFloat(document.getElementById('lightZ').value)
+            );
+
+            return {
+                surfaceType,
+                resolution,
+                showShadows,
+                showGround,
+                showLightPosition,
+                rotXDeg, rotYDeg,
+                rotX: toRad(rotXDeg),
+                rotY: toRad(rotYDeg),
+                lightPos
+            };
+        }
+
+        function syncLabels(state) {
+            setText('resolutionValue', String(state.resolution));
+            setText('rotXValue', String(Math.round(state.rotXDeg)));
+            setText('rotYValue', String(Math.round(state.rotYDeg)));
+
+            setText('lightXValue', state.lightPos.x.toFixed(1));
+            setText('lightYValue', state.lightPos.y.toFixed(1));
+            setText('lightZValue', state.lightPos.z.toFixed(1));
+        }
+
+        // ============================================================================
+        // Render
+        // ============================================================================
+        function render() {
+            ctx.fillStyle = '#e8f4f8';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const st = readState();
+            syncLabels(st);
+
+            const quads = buildSurfaceQuads(st.surfaceType, st.resolution, st.rotX, st.rotY);
+
+            // 1) Ground
+            let groundPoly2D = null;
+            if (st.showGround) groundPoly2D = drawGround();
+
+            // 2) Shadow (mask)
+            if (st.showShadows) {
+                buildShadowMask(quads, st.lightPos);
+
+                ctx.save();
+                if (groundPoly2D) {
+                    ctx.beginPath();
+                    ctx.moveTo(groundPoly2D[0].x, groundPoly2D[0].y);
+                    ctx.lineTo(groundPoly2D[1].x, groundPoly2D[1].y);
+                    ctx.lineTo(groundPoly2D[2].x, groundPoly2D[2].y);
+                    ctx.lineTo(groundPoly2D[3].x, groundPoly2D[3].y);
+                    ctx.closePath();
+                    ctx.clip();
+                }
+                ctx.globalAlpha = shadowOpacity;
+                ctx.drawImage(shadowCanvas, 0, 0);
+                ctx.restore();
+            }
+
+            // 3) Object
+            drawObject(quads);
+
+            // 4) Light marker
+            if (st.showLightPosition) drawLightMarker(st.lightPos);
+        }
+
+        // ============================================================================
+        // Bind UI
+        // ============================================================================
+        const defaultValues = {
+            surfaceType: 'bezier',
+            showShadows: true,
+            showGround: true,
+            showLightPosition: true,
+            lightX: 3,
+            lightY: 4,
+            lightZ: 6,
+            resolution: 25,
+            rotX: -29,  // degrees
+            rotY: 34    // degrees
+        };
+
+        function resetAll() {
+            document.getElementById('surfaceType').value = defaultValues.surfaceType;
+            document.getElementById('showShadows').checked = defaultValues.showShadows;
+            document.getElementById('showGround').checked = defaultValues.showGround;
+            document.getElementById('showLightPosition').checked = defaultValues.showLightPosition;
+
+            document.getElementById('lightX').value = String(defaultValues.lightX);
+            document.getElementById('lightY').value = String(defaultValues.lightY);
+            document.getElementById('lightZ').value = String(defaultValues.lightZ);
+
+            document.getElementById('resolution').value = String(defaultValues.resolution);
+
+            document.getElementById('rotX').value = String(defaultValues.rotX);
+            document.getElementById('rotY').value = String(defaultValues.rotY);
+
+            render();
+        }
+
+        // all re-render controls
+        [
+            'surfaceType',
+            'showShadows', 'showGround', 'showLightPosition',
+            'lightX', 'lightY', 'lightZ',
+            'resolution',
+            'rotX', 'rotY'
+        ].forEach(id => {
+            const node = document.getElementById(id);
+            const evt = (node.type === 'range') ? 'input' : 'change';
+            node.addEventListener(evt, render);
+            node.addEventListener('change', render);
+        });
+
+        document.getElementById('resetAll').addEventListener('click', resetAll);
+
+        // init labels + render
+        render();
+    </script>
+</body>
+
+</html>

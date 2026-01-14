@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лабораторная работа по компьютерной графике</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .navigation {
+      background: #2d3748;
+      padding: 15px 30px;
+      border-bottom: 3px solid #1a202c;
+    }
+
+    .nav-btn {
+      min-width: 80px;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+    }
+
+    .lab-info {
+      background: #f7fafc;
+      padding: 20px 30px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .canvas-wrapper {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #canvas {
+      background: white;
+      border: 1px solid #a0aec0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls-panel {
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 25px;
+      overflow-y: auto;
+      max-height: 700px;
+    }
+
+    .controls-panel h3 {
+      color: #2d3748;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #cbd5e0;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Заголовок курса -->
+    <div class="header">
+      <h1 class="mb-2">Лабораторная работа 6</h1>
+      <h2 class="h4 fw-light opacity-75">Реализовать алгоритм трассировки лучей при формировании сложной
+сцены
+      </h2>
+    </div>
+
+    <!-- Рабочая область -->
+    <div class="row g-3 p-4">
+      <!-- Область Canvas -->
+      <div class="col-lg-8">
+        <div class="canvas-wrapper">
+          <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+
+      <!-- Панель управления -->
+      <div class="col-lg-4">
+        <div class="controls-panel">
+          <h3 class="h5 mb-3">Контроллеры</h3>
+
+          <div id="controls">
+            <div class="mb-3">
+              <div class="fw-semibold mb-2">Сцена</div>
+
+              <div class="mt-2">
+                <label class="form-label">Поворот X: <span id="rotXValue">-15</span>°</label>
+                <input type="range" class="form-range" id="rotX" min="-89" max="89" step="1" value="-15">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label">Поворот Y: <span id="rotYValue">25</span>°</label>
+                <input type="range" class="form-range" id="rotY" min="-180" max="180" step="1" value="25">
+              </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-2">Камера</div>
+
+              <div class="mt-2">
+                <label class="form-label">Дистанция: <span id="camDistValue">6.0</span></label>
+                <input type="range" class="form-range" id="camDist" min="3" max="12" step="0.1" value="6.0">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label">FOV: <span id="fovValue">55</span>°</label>
+                <input type="range" class="form-range" id="fov" min="25" max="90" step="1" value="55">
+              </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-2">Источник света</div>
+
+              <div class="mt-2">
+                <label class="form-label">X: <span id="lightXValue">4.0</span></label>
+                <input type="range" class="form-range" id="lightX" min="-10" max="10" step="0.5" value="4.0">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label">Y: <span id="lightYValue">6.0</span></label>
+                <input type="range" class="form-range" id="lightY" min="-2" max="12" step="0.5" value="6.0">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label">Z: <span id="lightZValue">3.0</span></label>
+                <input type="range" class="form-range" id="lightZ" min="-10" max="10" step="0.5" value="3.0">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label">Интенсивность: <span id="lightIValue">1.20</span></label>
+                <input type="range" class="form-range" id="lightI" min="0" max="3" step="0.05" value="1.20">
+              </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-2">Рендер</div>
+
+              <div class="mt-2">
+                <label class="form-label">Качество (scale): <span id="scaleValue">0.75</span></label>
+                <input type="range" class="form-range" id="renderScale" min="0.35" max="1" step="0.05" value="0.75">
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label">AA (сэмплы): <span id="aaValue">1</span></label>
+                <select class="form-select" id="aa">
+                  <option value="1" selected>1</option>
+                  <option value="2">2</option>
+                  <option value="4">4</option>
+                </select>
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label">Глубина отражений: <span id="depthValue">2</span></label>
+                <input type="range" class="form-range" id="maxDepth" min="0" max="5" step="1" value="2">
+              </div>
+
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="enableShadows" checked>
+                <label class="form-check-label" for="enableShadows">Тени</label>
+              </div>
+
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="enableReflections" checked>
+                <label class="form-check-label" for="enableReflections">Отражения</label>
+              </div>
+
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="showGround" checked>
+                <label class="form-check-label" for="showGround">Плоскость (шахматка)</label>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-gradient" id="renderBtn">Рендер</button>
+              <button class="btn btn-outline-secondary" id="stopBtn">Стоп</button>
+              <button class="btn btn-outline-secondary" id="resetBtn">Сброс</button>
+            </div>
+
+            <hr class="my-3">
+            <div class="small text-secondary">
+              Подсказка: увеличивай scale/AA/глубину отражений — качество растёт, но рендер медленнее.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d", { alpha: false });
+
+    const el = (id) => document.getElementById(id);
+    const toRad = (d) => d * Math.PI / 180;
+    const clamp01 = (x) => Math.min(1, Math.max(0, x));
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    // ============================================================================
+    // Math
+    // ============================================================================
+    class Vec3 {
+      constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; }
+      add(v) { return new Vec3(this.x + v.x, this.y + v.y, this.z + v.z); }
+      sub(v) { return new Vec3(this.x - v.x, this.y - v.y, this.z - v.z); }
+      mul(s) { return new Vec3(this.x * s, this.y * s, this.z * s); }
+      dot(v) { return this.x * v.x + this.y * v.y + this.z * v.z; }
+      cross(v) {
+        return new Vec3(
+          this.y * v.z - this.z * v.y,
+          this.z * v.x - this.x * v.z,
+          this.x * v.y - this.y * v.x
+        );
+      }
+      len() { return Math.hypot(this.x, this.y, this.z); }
+      norm() {
+        const L = this.len() || 1;
+        return new Vec3(this.x / L, this.y / L, this.z / L);
+      }
+    }
+
+    // отражение: I - 2*(I·N)*N
+    const reflect = (I, N) => I.sub(N.mul(2 * I.dot(N)));
+
+    function rotX(p, a) {
+      const c = Math.cos(a), s = Math.sin(a);
+      return new Vec3(p.x, p.y * c - p.z * s, p.y * s + p.z * c);
+    }
+    function rotY(p, a) {
+      const c = Math.cos(a), s = Math.sin(a);
+      return new Vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
+    }
+    function rotXY(p, ax, ay) { return rotY(rotX(p, ax), ay); }
+
+    // ============================================================================
+    // Materials + colors
+    // ============================================================================
+    function mat(params) {
+      return {
+        color: params.color || new Vec3(1, 1, 1),
+        ambient: params.ambient ?? 0.06,
+        diffuse: params.diffuse ?? 0.9,
+        specular: params.specular ?? 0.25,
+        shininess: params.shininess ?? 64,
+        reflectivity: params.reflectivity ?? 0.0,
+        checker: params.checker || false
+      };
+    }
+
+    function skyColor(dir) {
+      const t = clamp01(0.5 * (dir.y + 1));
+      const a = new Vec3(0.07, 0.08, 0.16);
+      const b = new Vec3(0.55, 0.70, 0.95);
+      return a.mul(1 - t).add(b.mul(t));
+    }
+
+    function checkerAt(p) {
+      const scale = 1.1;
+      const xi = Math.floor(p.x * scale);
+      const zi = Math.floor(p.z * scale);
+      const m = (xi + zi) & 1;
+      return m ? new Vec3(0.88, 0.88, 0.92) : new Vec3(0.10, 0.10, 0.12);
+    }
+
+    // ============================================================================
+    // Scene primitives
+    // ============================================================================
+    function makeSphere(center, radius, mat) {
+      return { type: "sphere", c: center, r: radius, mat };
+    }
+    function makePlane(point, normal, mat) {
+      return { type: "plane", p: point, n: normal.norm(), mat };
+    }
+    function makeBox(center, halfSize, mat) {
+      return { type: "box", c: center, hs: halfSize, mat };
+    }
+    function makeMesh(tris, mat) {
+      return { type: "mesh", tris, mat };
+    }
+    function makeTorus(center, majorR, minorR, mat) {
+      return { type: "torusSDF", c: center, R: majorR, r: minorR, mat };
+    }
+
+    function makePyramid(center, baseHalfSize, height, matPyr) {
+      const yBase = -height / 2;
+      const yApex = height / 2;
+
+      const A = new Vec3(-baseHalfSize, yBase, -baseHalfSize);
+      const B = new Vec3(baseHalfSize, yBase, -baseHalfSize);
+      const C = new Vec3(baseHalfSize, yBase, baseHalfSize);
+      const D = new Vec3(-baseHalfSize, yBase, baseHalfSize);
+      const P = new Vec3(0, yApex, 0);
+
+      const T = (v) => v.add(center);
+
+      const tris = [
+        // sides
+        [T(A), T(B), T(P)],
+        [T(B), T(C), T(P)],
+        [T(C), T(D), T(P)],
+        [T(D), T(A), T(P)],
+        // base (2 tris)
+        [T(A), T(C), T(B)],
+        [T(A), T(D), T(C)],
+      ];
+
+      return makeMesh(tris, matPyr);
+    }
+
+    // ============================================================================
+    // Intersections
+    // ============================================================================
+    function intersectSphere(rayO, rayD, sph) {
+      const oc = rayO.sub(sph.c);
+      const a = rayD.dot(rayD);
+      const b = 2 * oc.dot(rayD);
+      const c = oc.dot(oc) - sph.r * sph.r;
+      const disc = b * b - 4 * a * c;
+      if (disc < 0) return null;
+
+      const s = Math.sqrt(disc);
+      const t0 = (-b - s) / (2 * a);
+      const t1 = (-b + s) / (2 * a);
+      const t = (t0 > 1e-4) ? t0 : ((t1 > 1e-4) ? t1 : null);
+      if (t === null) return null;
+
+      const hit = rayO.add(rayD.mul(t));
+      let n = hit.sub(sph.c).norm();
+      if (n.dot(rayD) > 0) n = n.mul(-1);
+
+      return { t, hit, n, mat: sph.mat, obj: sph };
+    }
+
+    function intersectPlane(rayO, rayD, pl) {
+      const denom = pl.n.dot(rayD);
+      if (Math.abs(denom) < 1e-6) return null;
+
+      const t = pl.p.sub(rayO).dot(pl.n) / denom;
+      if (t <= 1e-4) return null;
+
+      const hit = rayO.add(rayD.mul(t));
+      let n = pl.n;
+      if (n.dot(rayD) > 0) n = n.mul(-1);
+
+      return { t, hit, n, mat: pl.mat, obj: pl };
+    }
+
+    function intersectBox(rayO, rayD, box) {
+      // slab method for AABB
+      const minB = box.c.sub(box.hs);
+      const maxB = box.c.add(box.hs);
+
+      const inv = new Vec3(
+        1 / (Math.abs(rayD.x) < 1e-12 ? 1e-12 : rayD.x),
+        1 / (Math.abs(rayD.y) < 1e-12 ? 1e-12 : rayD.y),
+        1 / (Math.abs(rayD.z) < 1e-12 ? 1e-12 : rayD.z)
+      );
+
+      let t1 = (minB.x - rayO.x) * inv.x;
+      let t2 = (maxB.x - rayO.x) * inv.x;
+      let tmin = Math.min(t1, t2);
+      let tmax = Math.max(t1, t2);
+
+      t1 = (minB.y - rayO.y) * inv.y;
+      t2 = (maxB.y - rayO.y) * inv.y;
+      tmin = Math.max(tmin, Math.min(t1, t2));
+      tmax = Math.min(tmax, Math.max(t1, t2));
+
+      t1 = (minB.z - rayO.z) * inv.z;
+      t2 = (maxB.z - rayO.z) * inv.z;
+      tmin = Math.max(tmin, Math.min(t1, t2));
+      tmax = Math.min(tmax, Math.max(t1, t2));
+
+      if (tmax < tmin || tmax <= 1e-4) return null;
+
+      const t = (tmin > 1e-4) ? tmin : tmax;
+      const hit = rayO.add(rayD.mul(t));
+
+      // normal by closest face
+      const p = hit.sub(box.c);
+      const ax = Math.abs(p.x), ay = Math.abs(p.y), az = Math.abs(p.z);
+
+      let n;
+      if (ax >= ay && ax >= az) n = new Vec3(Math.sign(p.x), 0, 0);
+      else if (ay >= ax && ay >= az) n = new Vec3(0, Math.sign(p.y), 0);
+      else n = new Vec3(0, 0, Math.sign(p.z));
+
+      if (n.dot(rayD) > 0) n = n.mul(-1);
+
+      return { t, hit, n, mat: box.mat, obj: box };
+    }
+
+    function intersectTriangleMT(rayO, rayD, a, b, c) {
+      const eps = 1e-8;
+      const e1 = b.sub(a);
+      const e2 = c.sub(a);
+
+      const pvec = rayD.cross(e2);
+      const det = e1.dot(pvec);
+      if (Math.abs(det) < eps) return null;
+
+      const invDet = 1 / det;
+      const tvec = rayO.sub(a);
+
+      const u = tvec.dot(pvec) * invDet;
+      if (u < 0 || u > 1) return null;
+
+      const qvec = tvec.cross(e1);
+      const v = rayD.dot(qvec) * invDet;
+      if (v < 0 || u + v > 1) return null;
+
+      const t = e2.dot(qvec) * invDet;
+      if (t <= 1e-4) return null;
+
+      let n = e1.cross(e2).norm();
+      if (n.dot(rayD) > 0) n = n.mul(-1);
+
+      const hit = rayO.add(rayD.mul(t));
+      return { t, hit, n };
+    }
+
+    function intersectMesh(rayO, rayD, mesh) {
+      let best = null;
+      for (const tri of mesh.tris) {
+        const is = intersectTriangleMT(rayO, rayD, tri[0], tri[1], tri[2]);
+        if (!is) continue;
+        if (!best || is.t < best.t) best = is;
+      }
+      if (!best) return null;
+      return { t: best.t, hit: best.hit, n: best.n, mat: mesh.mat, obj: mesh };
+    }
+
+    // ---- Torus SDF + sphere tracing
+    function sdfTorus(p, torus) {
+      const lp = p.sub(torus.c);
+      const qx = Math.hypot(lp.x, lp.z) - torus.R;
+      const qy = lp.y;
+      return Math.hypot(qx, qy) - torus.r;
+    }
+
+    function sdfNormal(p, sdfFn) {
+      const e = 1e-4;
+      const dx = sdfFn(new Vec3(p.x + e, p.y, p.z)) - sdfFn(new Vec3(p.x - e, p.y, p.z));
+      const dy = sdfFn(new Vec3(p.x, p.y + e, p.z)) - sdfFn(new Vec3(p.x, p.y - e, p.z));
+      const dz = sdfFn(new Vec3(p.x, p.y, p.z + e)) - sdfFn(new Vec3(p.x, p.y, p.z - e));
+      return new Vec3(dx, dy, dz).norm();
+    }
+
+    function intersectTorusSDF(rayO, rayD, torus) {
+      const maxSteps = 96;
+      const maxDist = 80;
+      const eps = 1e-3;
+
+      let t = 1e-3;
+      for (let i = 0; i < maxSteps && t < maxDist; i++) {
+        const p = rayO.add(rayD.mul(t));
+        const d = sdfTorus(p, torus);
+
+        if (d < eps) {
+          const hit = p;
+          let n = sdfNormal(hit, (pp) => sdfTorus(pp, torus));
+          if (n.dot(rayD) > 0) n = n.mul(-1);
+          return { t, hit, n, mat: torus.mat, obj: torus };
+        }
+        t += Math.max(d, eps);
+      }
+      return null;
+    }
+
+    function intersectScene(rayO, rayD, objects) {
+      let best = null;
+      for (const o of objects) {
+        let isect = null;
+
+        if (o.type === "sphere") isect = intersectSphere(rayO, rayD, o);
+        else if (o.type === "plane") isect = intersectPlane(rayO, rayD, o);
+        else if (o.type === "box") isect = intersectBox(rayO, rayD, o);
+        else if (o.type === "mesh") isect = intersectMesh(rayO, rayD, o);
+        else if (o.type === "torusSDF") isect = intersectTorusSDF(rayO, rayD, o);
+
+        if (!isect) continue;
+        if (!best || isect.t < best.t) best = isect;
+      }
+      return best;
+    }
+
+    // ============================================================================
+    // Shading + tracing
+    // ============================================================================
+    function shade(rayO, rayD, hitInfo, state, objects, depth) {
+      const P = hitInfo.hit;
+      const N = hitInfo.n;
+      const M = hitInfo.mat;
+
+      let baseColor = M.color;
+      if (M.checker && state.showGround) baseColor = checkerAt(P);
+
+      // ambient
+      let col = baseColor.mul(M.ambient);
+
+      // one point light
+      const Lvec = state.lightPos.sub(P);
+      const dist = Lvec.len();
+      const L = Lvec.mul(1 / (dist || 1));
+      const ndotl = Math.max(0, N.dot(L));
+
+      let shadow = 1.0;
+      if (state.enableShadows && ndotl > 0) {
+        const epsP = P.add(N.mul(1e-3));
+        const sh = intersectScene(epsP, L, objects);
+        if (sh && sh.t < dist) shadow = 0.0;
+      }
+
+      // attenuation (fixed)
+      const att = 1.0 / (1.0 + 0.02 * dist + 0.03 * dist * dist);
+      const I = state.lightI * att * shadow;
+
+      // diffuse
+      col = col.add(baseColor.mul(M.diffuse * ndotl * I));
+
+      // specular
+      if (ndotl > 0 && M.specular > 0) {
+        const V = rayO.sub(P).norm();
+        const R = reflect(L.mul(-1), N).norm();
+        const rdotv = Math.max(0, R.dot(V));
+        const spec = M.specular * Math.pow(rdotv, M.shininess) * I;
+        col = col.add(new Vec3(1, 1, 1).mul(spec));
+      }
+
+      // reflections
+      if (state.enableReflections && depth < state.maxDepth && M.reflectivity > 0) {
+        const reflDir = reflect(rayD, N).norm();
+        const reflOrg = P.add(N.mul(1e-3));
+        const reflCol = trace(reflOrg, reflDir, state, objects, depth + 1);
+        col = col.mul(1 - M.reflectivity).add(reflCol.mul(M.reflectivity));
+      }
+
+      return col;
+    }
+
+    function trace(rayO, rayD, state, objects, depth) {
+      const hit = intersectScene(rayO, rayD, objects);
+      if (!hit) return skyColor(rayD);
+      return shade(rayO, rayD, hit, state, objects, depth);
+    }
+
+    // ============================================================================
+    // Camera + scene
+    // ============================================================================
+    function makeCamera(state) {
+      // camera orbit
+      const basePos = new Vec3(0, 0, state.camDist);
+      const camPos = rotXY(basePos, state.rotX, state.rotY);
+      const target = new Vec3(0, 0, 0);
+      const up0 = new Vec3(0, 1, 0);
+
+      const forward = target.sub(camPos).norm();
+      const right = up0.cross(forward).norm();
+      const up = forward.cross(right).norm();
+
+      return { camPos, forward, right, up };
+    }
+
+    function buildScene(state) {
+      // лёгкий общий поворот сцены (чтобы и "сцена" менялась)
+      const ax = state.rotX * 0.20;
+      const ay = state.rotY * 0.20;
+      const R = (p) => rotXY(p, ax, ay);
+
+      const objs = [];
+
+      // ground
+      objs.push(makePlane(
+        R(new Vec3(0, -2.0, 0)),
+        R(new Vec3(0, 1, 0)),
+        mat({
+          color: new Vec3(1, 1, 1),
+          checker: true,
+          ambient: 0.08,
+          diffuse: 0.85,
+          specular: 0.08,
+          shininess: 32,
+          reflectivity: 0.05
+        })
+      ));
+
+      // sphere (left)
+      objs.push(makeSphere(
+        R(new Vec3(-3.0, -0.85, -0.8)),
+        0.95,
+        mat({
+          color: new Vec3(0.90, 0.25, 0.20),
+          ambient: 0.05,
+          diffuse: 0.85,
+          specular: 0.30,
+          shininess: 90,
+          reflectivity: 0.18
+        })
+      ));
+
+      // box (right)
+      objs.push(makeBox(
+        R(new Vec3(3.0, -1.05, 1.0)),
+        new Vec3(0.85, 0.85, 0.85),
+        mat({
+          color: new Vec3(0.20, 0.70, 0.35),
+          ambient: 0.05,
+          diffuse: 0.82,
+          specular: 0.22,
+          shininess: 60,
+          reflectivity: 0.10
+        })
+      ));
+
+      // pyramid (front-left)
+      objs.push(makePyramid(
+        R(new Vec3(-0.8, -1.0, 3.0)),
+        1.05,
+        2.3,
+        mat({
+          color: new Vec3(0.90, 0.85, 0.20),
+          ambient: 0.05,
+          diffuse: 0.86,
+          specular: 0.16,
+          shininess: 42,
+          reflectivity: 0.06
+        })
+      ));
+
+      // torus (back-right) - SDF
+      objs.push(makeTorus(
+        R(new Vec3(1.2, -0.25, -3.1)),
+        1.10,
+        0.36,
+        mat({
+          color: new Vec3(0.25, 0.55, 0.95),
+          ambient: 0.05,
+          diffuse: 0.80,
+          specular: 0.55,
+          shininess: 140,
+          reflectivity: 0.45
+        })
+      ));
+
+      return objs;
+    }
+
+    // ============================================================================
+    // Progressive render (ImageData)
+    // ============================================================================
+    let job = null;
+
+    function readState() {
+      return {
+        rotX: toRad(parseFloat(el("rotX").value)),
+        rotY: toRad(parseFloat(el("rotY").value)),
+        camDist: parseFloat(el("camDist").value),
+        fov: toRad(parseFloat(el("fov").value)),
+
+        lightPos: new Vec3(
+          parseFloat(el("lightX").value),
+          parseFloat(el("lightY").value),
+          parseFloat(el("lightZ").value)
+        ),
+        lightI: parseFloat(el("lightI").value),
+
+        renderScale: parseFloat(el("renderScale").value),
+        aa: parseInt(el("aa").value, 10),
+        maxDepth: parseInt(el("maxDepth").value, 10),
+
+        enableShadows: el("enableShadows").checked,
+        enableReflections: el("enableReflections").checked,
+        showGround: el("showGround").checked
+      };
+    }
+
+    function syncLabels(s) {
+      el("rotXValue").textContent = String(Math.round(parseFloat(el("rotX").value)));
+      el("rotYValue").textContent = String(Math.round(parseFloat(el("rotY").value)));
+
+      el("camDistValue").textContent = s.camDist.toFixed(1);
+      el("fovValue").textContent = String(Math.round(parseFloat(el("fov").value)));
+
+      el("lightXValue").textContent = s.lightPos.x.toFixed(1);
+      el("lightYValue").textContent = s.lightPos.y.toFixed(1);
+      el("lightZValue").textContent = s.lightPos.z.toFixed(1);
+      el("lightIValue").textContent = s.lightI.toFixed(2);
+
+      el("scaleValue").textContent = s.renderScale.toFixed(2);
+      el("aaValue").textContent = String(s.aa);
+      el("depthValue").textContent = String(s.maxDepth);
+    }
+
+    function stopRender() {
+      if (!job) return;
+      job.cancelled = true;
+      job = null;
+    }
+
+    function startRender() {
+      stopRender();
+
+      const state = readState();
+      syncLabels(state);
+
+      const W = Math.max(2, Math.floor(canvas.width * state.renderScale));
+      const H = Math.max(2, Math.floor(canvas.height * state.renderScale));
+
+      const off = document.createElement("canvas");
+      off.width = W;
+      off.height = H;
+
+      const octx = off.getContext("2d", { alpha: false });
+      const img = octx.createImageData(W, H);
+      const data = img.data;
+
+      const cam = makeCamera(state);
+      const objects = buildScene(state);
+
+      const aspect = W / H;
+      const tanF = Math.tan(state.fov * 0.5);
+
+      job = {
+        cancelled: false,
+        y: 0,
+        W, H,
+        off, octx, img, data,
+        state, cam, objects,
+        aspect, tanF
+      };
+
+      requestAnimationFrame(renderStep);
+    }
+
+    function renderPixel(job, x, y) {
+      const { W, H, cam, aspect, tanF, state, objects } = job;
+
+      const aa = state.aa;
+      let acc = new Vec3(0, 0, 0);
+
+      for (let sy = 0; sy < aa; sy++) {
+        for (let sx = 0; sx < aa; sx++) {
+          const jx = (sx + 0.5) / aa;
+          const jy = (sy + 0.5) / aa;
+
+          const px = ((x + jx) / W) * 2 - 1;
+          const py = 1 - ((y + jy) / H) * 2;
+
+          const dir = cam.forward
+            .add(cam.right.mul(px * aspect * tanF))
+            .add(cam.up.mul(py * tanF))
+            .norm();
+
+          const col = trace(cam.camPos, dir, state, objects, 0);
+          acc = acc.add(col);
+        }
+      }
+
+      return acc.mul(1 / (aa * aa));
+    }
+
+    function renderStep() {
+      if (!job || job.cancelled) return;
+
+      const { W, H, data } = job;
+      const linesPerFrame = 8;
+
+      for (let k = 0; k < linesPerFrame && job.y < H; k++, job.y++) {
+        const y = job.y;
+        for (let x = 0; x < W; x++) {
+          const col = renderPixel(job, x, y);
+          const i = (y * W + x) * 4;
+          data[i + 0] = (clamp01(col.x) * 255) | 0;
+          data[i + 1] = (clamp01(col.y) * 255) | 0;
+          data[i + 2] = (clamp01(col.z) * 255) | 0;
+          data[i + 3] = 255;
+        }
+      }
+
+      // write pixels to offscreen and scale to main canvas
+      job.octx.putImageData(job.img, 0, 0);
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(job.off, 0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.fillText(`Ray tracing: ${job.y}/${H} lines`, 12, 18);
+
+      if (job.y < H) requestAnimationFrame(renderStep);
+    }
+
+    // ============================================================================
+    // UI bind
+    // ============================================================================
+    function bind() {
+      const ids = [
+        "rotX", "rotY",
+        "camDist", "fov",
+        "lightX", "lightY", "lightZ", "lightI",
+        "renderScale", "aa", "maxDepth",
+        "enableShadows", "enableReflections", "showGround"
+      ];
+
+      ids.forEach((id) => {
+        el(id).addEventListener("input", () => {
+          const s = readState();
+          syncLabels(s);
+        });
+        el(id).addEventListener("change", () => {
+          const s = readState();
+          syncLabels(s);
+        });
+      });
+
+      el("renderBtn").addEventListener("click", startRender);
+      el("stopBtn").addEventListener("click", stopRender);
+
+      el("resetBtn").addEventListener("click", () => {
+        el("rotX").value = "-15";
+        el("rotY").value = "25";
+        el("camDist").value = "6.0";
+        el("fov").value = "55";
+
+        el("lightX").value = "4.0";
+        el("lightY").value = "6.0";
+        el("lightZ").value = "3.0";
+        el("lightI").value = "1.20";
+
+        el("renderScale").value = "0.75";
+        el("aa").value = "1";
+        el("maxDepth").value = "2";
+
+        el("enableShadows").checked = true;
+        el("enableReflections").checked = true;
+        el("showGround").checked = true;
+
+        const s = readState();
+        syncLabels(s);
+        startRender();
+      });
+
+      const s = readState();
+      syncLabels(s);
+    }
+
+    bind();
+    startRender();
+  </script>
+
+
+</body>
+
+</html>
