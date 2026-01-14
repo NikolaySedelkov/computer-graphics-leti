@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ЛР: Отсечение отрезков прямоугольным окном</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+  <style>
+    body{
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .main-container{
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .header{
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .lab-info{
+      background: #f7fafc;
+      padding: 20px 30px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .canvas-wrapper{
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas{
+      background: white;
+      border: 1px solid #a0aec0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .controls-panel{
+      background: #f7fafc;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 25px;
+      overflow-y: auto;
+      max-height: 700px;
+    }
+    .controls-panel h3{
+      color: #2d3748;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #cbd5e0;
+    }
+    .btn-gradient{
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+    .btn-gradient:hover{
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+    }
+    .small-note{ color:#4a5568; }
+    .legend-dot{
+      display:inline-block;
+      width:10px;height:10px;border-radius:50%;
+      margin-right:6px; vertical-align:middle;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <div class="header">
+      <h1 class="mb-2">Лабораторная работа 4</h1>
+      <h2 class="h5 fw-light opacity-75 mb-0">
+        Обеспечить реализацию простого алгоритма отсечения массива произвольных отрезков заданным прямоугольным окном. Массив отрезков следует формировать генератором случайных чисел. Вначале следует вывести
+на экран сгенерированные отрезки полностью, а затем другим цветом или яркостью те, которые полностью или частично попадают в область окна.
+      </h2>
+    </div>
+
+    <div class="row g-3 p-4">
+      <!-- Canvas -->
+      <div class="col-lg-8">
+        <div class="canvas-wrapper">
+          <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+        <div class="mt-3 small text-secondary">
+          <span class="legend-dot" style="background:#94a3b8;"></span>Все отрезки (до отсечения)
+          <span class="ms-3 legend-dot" style="background:#ef4444;"></span>Часть отрезка внутри окна (результат отсечения)
+          <span class="ms-3 legend-dot" style="background:#2563eb;"></span>Прямоугольное окно
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="col-lg-4">
+        <div class="controls-panel">
+          <h3 class="h5 mb-3">Контроллеры</h3>
+
+          <div class="mb-3">
+            <label class="form-label">Количество отрезков</label>
+            <input id="segCount" type="number" class="form-control" value="40" min="1" max="300" step="1" />
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Диапазон X (мир)</label>
+              <input id="rangeX" type="number" class="form-control" value="350" min="50" max="900" step="10" />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Диапазон Y (мир)</label>
+              <input id="rangeY" type="number" class="form-control" value="250" min="50" max="700" step="10" />
+            </div>
+          </div>
+
+          <hr class="my-3"/>
+
+          <div class="mb-2 fw-semibold">Окно отсечения (прямоугольник)</div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Xmin</label>
+              <input id="winXmin" type="number" class="form-control" value="-150" step="10" />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Xmax</label>
+              <input id="winXmax" type="number" class="form-control" value="150" step="10" />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Ymin</label>
+              <input id="winYmin" type="number" class="form-control" value="-100" step="10" />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Ymax</label>
+              <input id="winYmax" type="number" class="form-control" value="100" step="10" />
+            </div>
+          </div>
+
+          <div class="form-check mb-3">
+            <input id="showAxes" class="form-check-input" type="checkbox" checked />
+            <label class="form-check-label" for="showAxes">Показывать оси координат</label>
+          </div>
+
+          <div class="form-check mb-3">
+            <input id="showRejected" class="form-check-input" type="checkbox" checked />
+            <label class="form-check-label" for="showRejected">Показывать все отрезки (фон)</label>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button id="genBtn" class="btn btn-gradient">Сгенерировать</button>
+            <button id="rerunBtn" class="btn btn-outline-primary">Пересчитать отсечение</button>
+          </div>
+
+          <hr class="my-3"/>
+          <div class="small-note small">
+            Используется алгоритм Cohen–Sutherland: каждой конечной точке присваивается 4-битный код области; по кодам выполняются тривиальные принятие/отбрасывание и итеративное отсечение по границам окна.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const el = (id) => document.getElementById(id);
+    const clamp = (v, min, max) => Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : min;
+
+    // -----------------------------
+    // World <-> Screen (как в твоих работах: ось Y вверх, центр по середине)
+    // -----------------------------
+    function clearCanvas() {
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function withWorldTransform(drawFn) {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      ctx.save();
+      ctx.setTransform(1, 0, 0, -1, cx, cy);
+      drawFn();
+      ctx.restore();
+    }
+
+    function drawAxes() {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      withWorldTransform(() => {
+        ctx.strokeStyle = "#cbd5e0";
+        ctx.lineWidth = 1;
+
+        // OX
+        ctx.beginPath();
+        ctx.moveTo(-cx, 0);
+        ctx.lineTo(cx, 0);
+        ctx.stroke();
+
+        // OY
+        ctx.beginPath();
+        ctx.moveTo(0, -cy);
+        ctx.lineTo(0, cy);
+        ctx.stroke();
+
+        // ticks
+        const tick = 6, step = 50;
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.beginPath();
+        for (let x = -cx; x <= cx; x += step) { ctx.moveTo(x, -tick); ctx.lineTo(x, tick); }
+        for (let y = -cy; y <= cy; y += step) { ctx.moveTo(-tick, y); ctx.lineTo(tick, y); }
+        ctx.stroke();
+      });
+    }
+
+    // -----------------------------
+    // Data
+    // -----------------------------
+    let segments = []; // {a:{x,y}, b:{x,y}}
+    function rand(min, max) { return min + Math.random() * (max - min); }
+
+    function readWindow() {
+      let xmin = Number(el("winXmin").value);
+      let xmax = Number(el("winXmax").value);
+      let ymin = Number(el("winYmin").value);
+      let ymax = Number(el("winYmax").value);
+
+      // нормализуем, если пользователь перепутал
+      if (xmin > xmax) [xmin, xmax] = [xmax, xmin];
+      if (ymin > ymax) [ymin, ymax] = [ymax, ymin];
+
+      return { xmin, xmax, ymin, ymax };
+    }
+
+    function generateSegments() {
+      const n = clamp(parseInt(el("segCount").value, 10), 1, 300);
+      const rx = clamp(Number(el("rangeX").value), 50, 2000);
+      const ry = clamp(Number(el("rangeY").value), 50, 2000);
+
+      segments = [];
+      for (let i = 0; i < n; i++) {
+        const a = { x: rand(-rx, rx), y: rand(-ry, ry) };
+        const b = { x: rand(-rx, rx), y: rand(-ry, ry) };
+        segments.push({ a, b });
+      }
+    }
+
+    // -----------------------------
+    // Cohen–Sutherland line clipping
+    // -----------------------------
+    const INSIDE = 0;  // 0000
+    const LEFT   = 1;  // 0001
+    const RIGHT  = 2;  // 0010
+    const BOTTOM = 4;  // 0100
+    const TOP    = 8;  // 1000
+
+    function outCode(p, w) {
+      let code = INSIDE;
+      if (p.x < w.xmin) code |= LEFT;
+      else if (p.x > w.xmax) code |= RIGHT;
+      if (p.y < w.ymin) code |= BOTTOM;
+      else if (p.y > w.ymax) code |= TOP;
+      return code;
+    }
+
+    // Возвращает null если отрезок полностью вне окна, иначе {a,b} — отсечённый отрезок
+    function clipCohenSutherland(a0, b0, w) {
+      let a = { x: a0.x, y: a0.y };
+      let b = { x: b0.x, y: b0.y };
+
+      let cA = outCode(a, w);
+      let cB = outCode(b, w);
+
+      while (true) {
+        // Тривиальное принятие: обе точки внутри
+        if ((cA | cB) === 0) return { a, b }; // accepted [web:80][web:81]
+        // Тривиальное отбрасывание: обе точки в одной внешней области
+        if ((cA & cB) !== 0) return null;     // rejected [web:80][web:81]
+
+        // Частичное пересечение: пересекаем с одной из границ и заменяем внешнюю точку [web:80][web:81]
+        const cOut = cA !== 0 ? cA : cB;
+        let x = 0, y = 0;
+
+        if (cOut & TOP) {
+          x = a.x + (b.x - a.x) * (w.ymax - a.y) / (b.y - a.y);
+          y = w.ymax;
+        } else if (cOut & BOTTOM) {
+          x = a.x + (b.x - a.x) * (w.ymin - a.y) / (b.y - a.y);
+          y = w.ymin;
+        } else if (cOut & RIGHT) {
+          y = a.y + (b.y - a.y) * (w.xmax - a.x) / (b.x - a.x);
+          x = w.xmax;
+        } else if (cOut & LEFT) {
+          y = a.y + (b.y - a.y) * (w.xmin - a.x) / (b.x - a.x);
+          x = w.xmin;
+        }
+
+        if (cOut === cA) {
+          a = { x, y };
+          cA = outCode(a, w);
+        } else {
+          b = { x, y };
+          cB = outCode(b, w);
+        }
+      }
+    }
+
+    // -----------------------------
+    // Drawing
+    // -----------------------------
+    function drawWindowRect(w) {
+      withWorldTransform(() => {
+        ctx.strokeStyle = "#2563eb";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(w.xmin, w.ymin, w.xmax - w.xmin, w.ymax - w.ymin);
+        ctx.setLineDash([]);
+      });
+    }
+
+    function drawSegment(seg, strokeStyle, width = 1.5, alpha = 1.0) {
+      withWorldTransform(() => {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(seg.a.x, seg.a.y);
+        ctx.lineTo(seg.b.x, seg.b.y);
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+
+    function render() {
+      const w = readWindow();
+
+      clearCanvas();
+      if (el("showAxes").checked) drawAxes();
+      drawWindowRect(w);
+
+      // 1) Рисуем все отрезки (фон)
+      if (el("showRejected").checked) {
+        for (const s of segments) drawSegment(s, "#94a3b8", 1.2, 0.55);
+      }
+
+      // 2) Рисуем результат отсечения (только те, что видимы в окне)
+      for (const s of segments) {
+        const clipped = clipCohenSutherland(s.a, s.b, w);
+        if (!clipped) continue;
+        drawSegment(clipped, "#ef4444", 2.6, 0.95);
+      }
+    }
+
+    // -----------------------------
+    // Bind UI
+    // -----------------------------
+    function bind() {
+      const rerenderIds = [
+        "segCount", "rangeX", "rangeY",
+        "winXmin", "winXmax", "winYmin", "winYmax",
+        "showAxes", "showRejected"
+      ];
+
+      rerenderIds.forEach(id => {
+        el(id).addEventListener("input", render);
+        el(id).addEventListener("change", render);
+      });
+
+      el("genBtn").addEventListener("click", () => {
+        generateSegments();
+        render();
+      });
+
+      el("rerunBtn").addEventListener("click", () => render());
+    }
+
+    // init
+    bind();
+    generateSegments();
+    render();
+  </script>
+</body>
+</html>
